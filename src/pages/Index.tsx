@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,17 +13,56 @@ const Index = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        checkUserRole(session.user.id);
+      }
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+          checkUserRole(session.user.id);
+        }
+      }
+    );
+
+    checkSession();
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkUserRole = async (userId: string) => {
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+
+    if (roles && roles.length > 0) {
+      if (roles.some(r => r.role === "admin")) {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
+
+      if (data.user) {
+        await checkUserRole(data.user.id);
+      }
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");
     } finally {

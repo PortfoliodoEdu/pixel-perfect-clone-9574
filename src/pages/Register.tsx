@@ -1,11 +1,49 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Register = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    nome: "",
+    email: "",
+    password: "",
+  });
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            nome: formData.nome,
+          },
+        },
+      });
+
+      if (error) throw error;
+      
+      toast.success("Cadastro realizado! Você já pode fazer login.");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao criar conta");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -39,121 +77,50 @@ const Register = () => {
               </p>
             </div>
 
-            <form className="space-y-6">
-              {/* Nome completo and Data de nascimento */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName" className="text-foreground text-base font-normal">
-                    Nome completo
-                  </Label>
-                  <Input
-                    id="fullName"
-                    type="text"
-                    className="h-14 text-base border-input bg-muted/50"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="birthDate" className="text-foreground text-base font-normal">
-                    Data de nascimento
-                  </Label>
-                  <Input
-                    id="birthDate"
-                    type="date"
-                    className="h-14 text-base border-input bg-muted/50"
-                  />
-                </div>
+            <form onSubmit={handleSignUp} className="space-y-6">
+              {/* Nome completo */}
+              <div className="space-y-2">
+                <Label htmlFor="fullName" className="text-foreground text-base font-normal">
+                  Nome completo
+                </Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  required
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  className="h-14 text-base border-input bg-muted/50"
+                />
               </div>
 
-              {/* Telefone, Email, CPF */}
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-foreground text-base font-normal">
-                    Telefone
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    className="h-14 text-base border-input bg-muted/50"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-foreground text-base font-normal">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    className="h-14 text-base border-input bg-muted/50"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cpf" className="text-foreground text-base font-normal">
-                    CPF
-                  </Label>
-                  <Input
-                    id="cpf"
-                    type="text"
-                    className="h-14 text-base border-input bg-muted/50"
-                  />
-                </div>
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-foreground text-base font-normal">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="h-14 text-base border-input bg-muted/50"
+                />
               </div>
 
-              {/* Rua e Bairro and Número residencial */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="street" className="text-foreground text-base font-normal">
-                    Rua e Bairro
-                  </Label>
-                  <Input
-                    id="street"
-                    type="text"
-                    className="h-14 text-base border-input bg-muted/50"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="number" className="text-foreground text-base font-normal">
-                    Número residencial
-                  </Label>
-                  <Input
-                    id="number"
-                    type="text"
-                    className="h-14 text-base border-input bg-muted/50"
-                  />
-                </div>
-              </div>
-
-              {/* CEP, Cidade, Estado */}
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="cep" className="text-foreground text-base font-normal">
-                    CEP
-                  </Label>
-                  <Input
-                    id="cep"
-                    type="text"
-                    className="h-14 text-base border-input bg-muted/50"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city" className="text-foreground text-base font-normal">
-                    Cidade
-                  </Label>
-                  <Input
-                    id="city"
-                    type="text"
-                    className="h-14 text-base border-input bg-muted/50"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state" className="text-foreground text-base font-normal">
-                    Estado
-                  </Label>
-                  <Input
-                    id="state"
-                    type="text"
-                    className="h-14 text-base border-input bg-muted/50"
-                  />
-                </div>
+              {/* Senha */}
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-foreground text-base font-normal">
+                  Senha
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="h-14 text-base border-input bg-muted/50"
+                />
               </div>
 
               {/* Buttons and agreement text */}
@@ -161,15 +128,17 @@ const Register = () => {
                 <Button
                   type="button"
                   onClick={() => navigate("/")}
+                  disabled={loading}
                   className="bg-foreground hover:bg-foreground/90 text-white font-bold text-lg px-12 py-6 rounded-lg transition-all"
                 >
                   CANCELAR
                 </Button>
                 <Button
                   type="submit"
+                  disabled={loading}
                   className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg px-12 py-6 rounded-lg shadow-lg transition-all hover:shadow-xl"
                 >
-                  CADASTRAR
+                  {loading ? "CADASTRANDO..." : "CADASTRAR"}
                 </Button>
                 <p className="text-foreground/70 text-sm flex-1">
                   Ao cadastrar, você está de acordo com o nosso regulamento atual.
