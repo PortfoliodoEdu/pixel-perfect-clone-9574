@@ -2,8 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header with gradient */}
@@ -46,6 +48,7 @@ const Index = () => {
               </div>
 
               <Button 
+                onClick={() => navigate("/cadastro")}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg px-12 py-6 rounded-lg shadow-lg transition-all hover:shadow-xl"
               >
                 FAZER CADASTRO
