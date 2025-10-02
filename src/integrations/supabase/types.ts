@@ -14,16 +14,188 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      historico_observacoes: {
+        Row: {
+          created_at: string | null
+          id: string
+          observacao: string
+          plano_adquirido_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          observacao: string
+          plano_adquirido_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          observacao?: string
+          plano_adquirido_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_observacoes_plano_adquirido_id_fkey"
+            columns: ["plano_adquirido_id"]
+            isOneToOne: false
+            referencedRelation: "planos_adquiridos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planos: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome_plano: string
+          preco: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome_plano: string
+          preco: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome_plano?: string
+          preco?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      planos_adquiridos: {
+        Row: {
+          cliente_id: string
+          created_at: string | null
+          data_aquisicao: string | null
+          id: string
+          id_carteira: string
+          plano_id: string
+          status_plano: Database["public"]["Enums"]["plan_status"] | null
+          tipo_saque: Database["public"]["Enums"]["withdrawal_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string | null
+          data_aquisicao?: string | null
+          id?: string
+          id_carteira: string
+          plano_id: string
+          status_plano?: Database["public"]["Enums"]["plan_status"] | null
+          tipo_saque: Database["public"]["Enums"]["withdrawal_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string | null
+          data_aquisicao?: string | null
+          id?: string
+          id_carteira?: string
+          plano_id?: string
+          status_plano?: Database["public"]["Enums"]["plan_status"] | null
+          tipo_saque?: Database["public"]["Enums"]["withdrawal_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planos_adquiridos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planos_adquiridos_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "planos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          foto_perfil: string | null
+          id: string
+          informacoes_personalizadas: string | null
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          foto_perfil?: string | null
+          id: string
+          informacoes_personalizadas?: string | null
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          foto_perfil?: string | null
+          id?: string
+          informacoes_personalizadas?: string | null
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "cliente"
+      plan_status:
+        | "eliminado"
+        | "segunda_chance"
+        | "teste_1"
+        | "teste_2"
+        | "sim_rem"
+        | "ativo"
+        | "pausado"
+      withdrawal_type: "mensal" | "quinzenal"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +322,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "cliente"],
+      plan_status: [
+        "eliminado",
+        "segunda_chance",
+        "teste_1",
+        "teste_2",
+        "sim_rem",
+        "ativo",
+        "pausado",
+      ],
+      withdrawal_type: ["mensal", "quinzenal"],
+    },
   },
 } as const

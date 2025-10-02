@@ -1,11 +1,36 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao fazer login");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header with gradient */}
@@ -59,7 +84,7 @@ const Index = () => {
             <div className="space-y-8">
               <h3 className="text-4xl font-bold text-foreground">Login</h3>
 
-              <form className="space-y-6">
+              <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-3">
                   <Label htmlFor="email" className="text-foreground text-base font-medium">
                     Email
@@ -67,8 +92,11 @@ const Index = () => {
                   <Input
                     id="email"
                     type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="h-14 text-base border-input bg-background"
                     placeholder=""
+                    required
                   />
                 </div>
 
@@ -79,16 +107,20 @@ const Index = () => {
                   <Input
                     id="password"
                     type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="h-14 text-base border-input bg-background"
                     placeholder=""
+                    required
                   />
                 </div>
 
                 <Button 
                   type="submit"
+                  disabled={loading}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg py-6 rounded-lg shadow-lg transition-all hover:shadow-xl"
                 >
-                  FAZER LOGIN
+                  {loading ? "ENTRANDO..." : "FAZER LOGIN"}
                 </Button>
 
                 <div className="text-center">

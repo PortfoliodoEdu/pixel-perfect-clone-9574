@@ -1,18 +1,84 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MoreVertical, Calendar, DollarSign, FileText, CheckSquare, Pencil } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ArrowLeft, MoreVertical, Calendar, DollarSign, FileText, CheckSquare, Pencil, LogOut, Upload } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
 import { WithdrawalRequestDialog } from "@/components/dashboard/WithdrawalRequestDialog";
 import { BiweeklyWithdrawalDialog } from "@/components/dashboard/BiweeklyWithdrawalDialog";
 import { SecondChanceDialog } from "@/components/dashboard/SecondChanceDialog";
 import { CommentsDialog } from "@/components/dashboard/CommentsDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { Session } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [planosAdquiridos, setPlanosAdquiridos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeDialog, setActiveDialog] = useState<{
     type: 'withdrawal' | 'biweekly' | 'secondChance' | 'comments' | null;
     planId: string;
   }>({ type: null, planId: '' });
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        if (session) {
+          loadUserData(session.user.id);
+        } else {
+          navigate("/auth");
+        }
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        loadUserData(session.user.id);
+      } else {
+        navigate("/auth");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const loadUserData = async (userId: string) => {
+    try {
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+      setProfile(profileData);
+
+      const { data: planosData } = await supabase
+        .from("planos_adquiridos")
+        .select(`
+          *,
+          planos:plano_id(nome_plano),
+          historico_observacoes(*)
+        `)
+        .eq("cliente_id", userId)
+        .order("created_at", { ascending: false });
+
+      setPlanosAdquiridos(planosData || []);
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
 
   const openDialog = (type: 'withdrawal' | 'biweekly' | 'secondChance' | 'comments', planId: string) => {
     setActiveDialog({ type, planId });
@@ -21,6 +87,25 @@ const Dashboard = () => {
   const closeDialog = () => {
     setActiveDialog({ type: null, planId: '' });
   };
+
+  const getStatusBadge = (status: string) => {
+    const statusMap: any = {
+      eliminado: { className: "bg-destructive text-destructive-foreground hover:bg-destructive/90", label: "Eliminado" },
+      segunda_chance: { className: "bg-orange-500 text-white hover:bg-orange-600", label: "Segunda Chance" },
+      teste_1: { className: "bg-orange-500 text-white hover:bg-orange-600", label: "Teste 1" },
+      teste_2: { className: "bg-orange-500 text-white hover:bg-orange-600", label: "Teste 2" },
+      sim_rem: { className: "bg-green-500 text-white hover:bg-green-600", label: "Simulador Rem." },
+      ativo: { className: "bg-blue-500 text-white hover:bg-blue-600", label: "Ativo" },
+      pausado: { className: "bg-gray-500 text-white hover:bg-gray-600", label: "Pausado" },
+    };
+
+    const config = statusMap[status] || statusMap.ativo;
+    return <Badge className={config.className}>● {config.label}</Badge>;
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -36,9 +121,9 @@ const Dashboard = () => {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-white text-2xl font-bold">Painel do Trader</span>
-          <button className="text-white flex items-center gap-2 text-sm hover:opacity-90 transition-opacity">
-            <ArrowLeft className="w-4 h-4" />
-            Voltar para o site
+          <button onClick={handleLogout} className="text-white flex items-center gap-2 text-sm hover:opacity-90 transition-opacity">
+            <LogOut className="w-4 h-4" />
+            Sair
           </button>
         </div>
       </header>
@@ -54,15 +139,21 @@ const Dashboard = () => {
             
             <div className="flex items-center gap-8">
               <Avatar className="w-40 h-40">
-                <AvatarFallback className="bg-muted text-4xl">NP</AvatarFallback>
+                {profile?.foto_perfil ? (
+                  <AvatarImage src={profile.foto_perfil} />
+                ) : (
+                  <AvatarFallback className="bg-muted text-4xl">
+                    {profile?.nome?.split(' ').map((n: string) => n[0]).join('').substring(0, 2) || 'U'}
+                  </AvatarFallback>
+                )}
               </Avatar>
               
               <div className="flex-1 space-y-4">
                 <h2 className="text-4xl font-bold text-foreground">
-                  Olá, <span className="text-primary">Nome da Pessoa</span>.
+                  Olá, <span className="text-primary">{profile?.nome || 'Trader'}</span>.
                 </h2>
                 <p className="text-foreground/80 text-base">
-                  Seja bem vindo ao Painel do Trader. Aqui você poderá controlar todas as funções da sua conta na nossa mesa proprietária.
+                  {profile?.informacoes_personalizadas || 'Seja bem vindo ao Painel do Trader. Aqui você poderá controlar todas as funções da sua conta na nossa mesa proprietária.'}
                 </p>
                 <div className="flex gap-4">
                   <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 py-6 text-base">
@@ -80,209 +171,84 @@ const Dashboard = () => {
           <div className="space-y-6">
             <h3 className="text-4xl font-bold text-foreground">Planos adquiridos</h3>
 
-            {/* Plan 1 - Prime1200 */}
-            <div className="bg-white rounded-lg overflow-hidden">
-              <div className="bg-muted/30 px-6 py-4 grid grid-cols-5 gap-4 text-sm font-medium text-foreground/70 border-b">
-                <div>ID da Carteira</div>
-                <div>Tipo de plano</div>
-                <div>Status do Plano</div>
-                <div>Saque</div>
-                <div>Solicitações</div>
+            {planosAdquiridos.length === 0 ? (
+              <div className="bg-white rounded-lg p-12 text-center">
+                <p className="text-foreground/70 text-lg">Você ainda não possui planos adquiridos.</p>
               </div>
-              
-              <div className="px-6 py-6 grid grid-cols-5 gap-4 items-center">
-                <div className="text-foreground font-medium">0001</div>
-                <div className="text-foreground font-medium">Prime1200</div>
-                <div>
-                  <Badge className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    ● Eliminado
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-foreground font-medium">Mensal</span>
-                  <Calendar className="w-4 h-4 text-foreground/50" />
-                  <span className="text-foreground/50 text-xs">mudar para quinzenal</span>
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => openDialog('biweekly', '0001')}
-                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
-                  >
-                    <Calendar className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => openDialog('withdrawal', '0001')}
-                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
-                  >
-                    <DollarSign className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => openDialog('comments', '0001')}
-                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
-                  >
-                    <FileText className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => openDialog('secondChance', '0001')}
-                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
-                  >
-                    <CheckSquare className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+            ) : (
+              planosAdquiridos.map((plano) => (
+                <div key={plano.id} className="bg-white rounded-lg overflow-hidden">
+                  {planosAdquiridos.indexOf(plano) === 0 && (
+                    <div className="bg-muted/30 px-6 py-4 grid grid-cols-5 gap-4 text-sm font-medium text-foreground/70 border-b">
+                      <div>ID da Carteira</div>
+                      <div>Tipo de plano</div>
+                      <div>Status do Plano</div>
+                      <div>Saque</div>
+                      <div>Solicitações</div>
+                    </div>
+                  )}
+                  
+                  <div className="px-6 py-6 grid grid-cols-5 gap-4 items-center">
+                    <div className="text-foreground font-medium">{plano.id_carteira}</div>
+                    <div className="text-foreground font-medium">{plano.planos?.nome_plano || '-'}</div>
+                    <div>{getStatusBadge(plano.status_plano)}</div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-foreground font-medium">
+                        {plano.tipo_saque === 'mensal' ? 'Mensal' : 'Quinzenal'}
+                      </span>
+                      <Calendar className="w-4 h-4 text-foreground/50" />
+                      <span className="text-foreground/50 text-xs">
+                        mudar para {plano.tipo_saque === 'mensal' ? 'quinzenal' : 'mensal'}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => openDialog('biweekly', plano.id)}
+                        className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                      >
+                        <Calendar className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => openDialog('withdrawal', plano.id)}
+                        className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                      >
+                        <DollarSign className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => openDialog('comments', plano.id)}
+                        className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => openDialog('secondChance', plano.id)}
+                        className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                      >
+                        <CheckSquare className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Timeline */}
-              <div className="px-6 pb-6 space-y-2 border-t pt-4">
-                <div className="text-sm font-medium text-foreground mb-3">Linha do tempo</div>
-                <div className="text-sm text-foreground/70 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span>20/09/2025</span>
-                    <span>|</span>
-                    <span>Valor solicitado: R$ 1.000,00</span>
-                    <span>|</span>
-                    <span>Valor final: R$ 700,00</span>
-                    <span>|</span>
-                    <span>Status: <strong>Efetuado</strong></span>
-                    <span>|</span>
-                    <span>Comprovante</span>
-                    <Pencil className="w-3 h-3" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>19/09/2025</span>
-                    <span>|</span>
-                    <span>Valor solicitado: R$ 1.000,00</span>
-                    <span>|</span>
-                    <span>Valor final: R$ 700,00</span>
-                    <span>|</span>
-                    <span>Status: <strong>Negado - Fora do ciclo</strong></span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>15/09/2025</span>
-                    <span>|</span>
-                    <span>Valor solicitado: R$ 1.000,00</span>
-                    <span>|</span>
-                    <span>Valor final: R$ 700,00</span>
-                    <span>|</span>
-                    <span>Status: <strong>Negado - Sem saldo</strong></span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>10/09/2025</span>
-                    <span>|</span>
-                    <span>Aprovação solicitada</span>
-                    <span>|</span>
-                    <span>Status: <strong>Aprovado</strong></span>
+                  {/* Timeline */}
+                  <div className="px-6 pb-6 space-y-2 border-t pt-4">
+                    <div className="text-sm font-medium text-foreground mb-3">Linha do tempo</div>
+                    {plano.historico_observacoes && plano.historico_observacoes.length > 0 ? (
+                      <div className="text-sm text-foreground/70 space-y-1">
+                        {plano.historico_observacoes.map((obs: any) => (
+                          <div key={obs.id} className="flex items-center gap-2">
+                            <span>{new Date(obs.created_at).toLocaleDateString('pt-BR')}</span>
+                            <span>|</span>
+                            <span>{obs.observacao}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-foreground/70">Nenhuma solicitação.</div>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Plan 2 - Advanced20000 */}
-            <div className="bg-white rounded-lg overflow-hidden">
-              <div className="px-6 py-6 grid grid-cols-5 gap-4 items-center">
-                <div className="text-foreground font-medium">0002</div>
-                <div className="text-foreground font-medium">Advanced20000</div>
-                <div>
-                  <Badge className="bg-orange-500 text-white hover:bg-orange-600">
-                    ● Teste 1
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-foreground font-medium">Mensal</span>
-                  <Calendar className="w-4 h-4 text-foreground/50" />
-                  <span className="text-foreground/50 text-xs">mudar para quinzenal</span>
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => openDialog('biweekly', '0002')}
-                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
-                  >
-                    <Calendar className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => openDialog('withdrawal', '0002')}
-                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
-                  >
-                    <DollarSign className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => openDialog('comments', '0002')}
-                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
-                  >
-                    <FileText className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => openDialog('secondChance', '0002')}
-                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
-                  >
-                    <CheckSquare className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Timeline */}
-              <div className="px-6 pb-6 border-t pt-4">
-                <div className="text-sm font-medium text-foreground mb-3">Linha do tempo</div>
-                <div className="text-sm text-foreground/70">Nenhuma solicitação.</div>
-              </div>
-            </div>
-
-            {/* Plan 3 - Skip20000 */}
-            <div className="bg-white rounded-lg overflow-hidden">
-              <div className="px-6 py-6 grid grid-cols-5 gap-4 items-center">
-                <div className="text-foreground font-medium">0003</div>
-                <div className="text-foreground font-medium">Skip20000</div>
-                <div>
-                  <Badge className="bg-green-500 text-white hover:bg-green-600">
-                    ● Simulador Rem.
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-foreground font-medium">Mensal</span>
-                  <Calendar className="w-4 h-4 text-foreground/50" />
-                  <span className="text-foreground/50 text-xs">mudar para quinzenal</span>
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => openDialog('biweekly', '0003')}
-                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
-                  >
-                    <Calendar className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => openDialog('withdrawal', '0003')}
-                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
-                  >
-                    <DollarSign className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => openDialog('comments', '0003')}
-                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
-                  >
-                    <FileText className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => openDialog('secondChance', '0003')}
-                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
-                  >
-                    <CheckSquare className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Timeline */}
-              <div className="px-6 pb-6 space-y-2 border-t pt-4">
-                <div className="text-sm font-medium text-foreground mb-3">Linha do tempo</div>
-                <div className="text-sm text-foreground/70">
-                  <div className="flex items-center gap-2">
-                    <span>10/09/2025</span>
-                    <span>|</span>
-                    <span>Aprovação solicitada</span>
-                    <span>|</span>
-                    <span>Status: <strong>Aprovado</strong></span>
-                  </div>
-                </div>
-              </div>
-            </div>
+              ))
+            )}
 
             {/* Status Legend */}
             <div className="bg-white rounded-lg p-6 mt-8">

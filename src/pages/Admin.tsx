@@ -1,0 +1,99 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LogOut, Users, Package, ShoppingCart } from "lucide-react";
+import { toast } from "sonner";
+import ClientesTab from "@/components/admin/ClientesTab";
+import PlanosTab from "@/components/admin/PlanosTab";
+import PlanosAdquiridosTab from "@/components/admin/PlanosAdquiridosTab";
+
+const Admin = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkAdminAccess();
+  }, []);
+
+  const checkAdminAccess = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      navigate("/auth");
+      return;
+    }
+
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id);
+
+    if (!roles || !roles.some(r => r.role === "admin")) {
+      toast.error("Acesso negado");
+      navigate("/dashboard");
+      return;
+    }
+
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10">
+      <header className="bg-card border-b shadow-sm">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Painel Administrativo
+          </h1>
+          <Button onClick={handleLogout} variant="outline">
+            <LogOut className="mr-2 h-4 w-4" />
+            Sair
+          </Button>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <Tabs defaultValue="clientes" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
+            <TabsTrigger value="clientes">
+              <Users className="mr-2 h-4 w-4" />
+              Clientes
+            </TabsTrigger>
+            <TabsTrigger value="planos">
+              <Package className="mr-2 h-4 w-4" />
+              Planos
+            </TabsTrigger>
+            <TabsTrigger value="planos-adquiridos">
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Planos Adquiridos
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="clientes">
+            <ClientesTab />
+          </TabsContent>
+
+          <TabsContent value="planos">
+            <PlanosTab />
+          </TabsContent>
+
+          <TabsContent value="planos-adquiridos">
+            <PlanosAdquiridosTab />
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
+  );
+};
+
+export default Admin;
