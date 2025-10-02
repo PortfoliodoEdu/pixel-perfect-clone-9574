@@ -2,8 +2,26 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, MoreVertical, Calendar, DollarSign, FileText, CheckSquare, Pencil } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { WithdrawalRequestDialog } from "@/components/dashboard/WithdrawalRequestDialog";
+import { BiweeklyWithdrawalDialog } from "@/components/dashboard/BiweeklyWithdrawalDialog";
+import { SecondChanceDialog } from "@/components/dashboard/SecondChanceDialog";
+import { CommentsDialog } from "@/components/dashboard/CommentsDialog";
 
 const Dashboard = () => {
+  const [activeDialog, setActiveDialog] = useState<{
+    type: 'withdrawal' | 'biweekly' | 'secondChance' | 'comments' | null;
+    planId: string;
+  }>({ type: null, planId: '' });
+
+  const openDialog = (type: 'withdrawal' | 'biweekly' | 'secondChance' | 'comments', planId: string) => {
+    setActiveDialog({ type, planId });
+  };
+
+  const closeDialog = () => {
+    setActiveDialog({ type: null, planId: '' });
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header with gradient */}
@@ -86,16 +104,28 @@ const Dashboard = () => {
                   <span className="text-foreground/50 text-xs">mudar para quinzenal</span>
                 </div>
                 <div className="flex gap-2">
-                  <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50">
+                  <button 
+                    onClick={() => openDialog('biweekly', '0001')}
+                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                  >
                     <Calendar className="w-4 h-4" />
                   </button>
-                  <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50">
+                  <button 
+                    onClick={() => openDialog('withdrawal', '0001')}
+                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                  >
                     <DollarSign className="w-4 h-4" />
                   </button>
-                  <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50">
+                  <button 
+                    onClick={() => openDialog('comments', '0001')}
+                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                  >
                     <FileText className="w-4 h-4" />
                   </button>
-                  <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50">
+                  <button 
+                    onClick={() => openDialog('secondChance', '0001')}
+                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                  >
                     <CheckSquare className="w-4 h-4" />
                   </button>
                 </div>
@@ -162,16 +192,28 @@ const Dashboard = () => {
                   <span className="text-foreground/50 text-xs">mudar para quinzenal</span>
                 </div>
                 <div className="flex gap-2">
-                  <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50">
+                  <button 
+                    onClick={() => openDialog('biweekly', '0002')}
+                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                  >
                     <Calendar className="w-4 h-4" />
                   </button>
-                  <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50">
+                  <button 
+                    onClick={() => openDialog('withdrawal', '0002')}
+                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                  >
                     <DollarSign className="w-4 h-4" />
                   </button>
-                  <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50">
+                  <button 
+                    onClick={() => openDialog('comments', '0002')}
+                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                  >
                     <FileText className="w-4 h-4" />
                   </button>
-                  <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50">
+                  <button 
+                    onClick={() => openDialog('secondChance', '0002')}
+                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                  >
                     <CheckSquare className="w-4 h-4" />
                   </button>
                 </div>
@@ -200,16 +242,28 @@ const Dashboard = () => {
                   <span className="text-foreground/50 text-xs">mudar para quinzenal</span>
                 </div>
                 <div className="flex gap-2">
-                  <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50">
+                  <button 
+                    onClick={() => openDialog('biweekly', '0003')}
+                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                  >
                     <Calendar className="w-4 h-4" />
                   </button>
-                  <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50">
+                  <button 
+                    onClick={() => openDialog('withdrawal', '0003')}
+                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                  >
                     <DollarSign className="w-4 h-4" />
                   </button>
-                  <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50">
+                  <button 
+                    onClick={() => openDialog('comments', '0003')}
+                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                  >
                     <FileText className="w-4 h-4" />
                   </button>
-                  <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50">
+                  <button 
+                    onClick={() => openDialog('secondChance', '0003')}
+                    className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-muted/50"
+                  >
                     <CheckSquare className="w-4 h-4" />
                   </button>
                 </div>
@@ -279,6 +333,28 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+
+      {/* Dialogs */}
+      <WithdrawalRequestDialog
+        open={activeDialog.type === 'withdrawal'}
+        onOpenChange={closeDialog}
+        planId={activeDialog.planId}
+      />
+      <BiweeklyWithdrawalDialog
+        open={activeDialog.type === 'biweekly'}
+        onOpenChange={closeDialog}
+        planId={activeDialog.planId}
+      />
+      <SecondChanceDialog
+        open={activeDialog.type === 'secondChance'}
+        onOpenChange={closeDialog}
+        planId={activeDialog.planId}
+      />
+      <CommentsDialog
+        open={activeDialog.type === 'comments'}
+        onOpenChange={closeDialog}
+        planId={activeDialog.planId}
+      />
     </div>
   );
 };
