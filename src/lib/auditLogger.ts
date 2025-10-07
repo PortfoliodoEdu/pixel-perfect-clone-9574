@@ -46,7 +46,7 @@ export class AuditLogger {
   }
 
   // ================== AUTENTICAÇÃO ==================
-  static async logLogin(userId: string, method: string) {
+  static async logLogin(userId?: string, method: string = 'email') {
     await this.log({
       action: 'user.login',
       resourceType: 'auth',
@@ -56,7 +56,7 @@ export class AuditLogger {
     });
   }
 
-  static async logLogout(userId: string) {
+  static async logLogout(userId?: string) {
     await this.log({
       action: 'user.logout',
       resourceType: 'auth',
@@ -65,7 +65,7 @@ export class AuditLogger {
     });
   }
 
-  static async logFailedLogin(email: string, reason: string) {
+  static async logFailedLogin(email: string, reason: string = 'Invalid credentials') {
     await this.log({
       action: 'user.login.failed',
       resourceType: 'auth',
@@ -75,33 +75,28 @@ export class AuditLogger {
   }
 
   // ================== SOLICITAÇÕES ==================
-  static async logWithdrawalRequest(userId: string, planId: string, amount: string) {
+  static async logWithdrawalRequest(amount?: number) {
     await this.log({
       action: 'solicitacao.saque.created',
       resourceType: 'solicitacoes',
-      resourceId: planId,
       severity: 'warning',
-      metadata: { user_id: userId, amount }
+      metadata: { amount }
     });
   }
 
-  static async logBiweeklyRequest(userId: string, planId: string) {
+  static async logBiweeklyWithdrawalRequest() {
     await this.log({
       action: 'solicitacao.quinzenal.created',
       resourceType: 'solicitacoes',
-      resourceId: planId,
-      severity: 'warning',
-      metadata: { user_id: userId }
+      severity: 'warning'
     });
   }
 
-  static async logSecondChanceRequest(userId: string, planId: string) {
+  static async logSecondChanceRequest() {
     await this.log({
       action: 'solicitacao.segunda_chance.created',
       resourceType: 'solicitacoes',
-      resourceId: planId,
-      severity: 'warning',
-      metadata: { user_id: userId }
+      severity: 'warning'
     });
   }
 
@@ -161,22 +156,15 @@ export class AuditLogger {
   }
 
   // ================== PERFIL E DADOS SENSÍVEIS ==================
-  static async logProfileUpdate(
-    userId: string,
-    oldData: any,
-    newData: any
-  ) {
+  static async logProfileUpdate() {
     await this.log({
       action: 'profile.updated',
       resourceType: 'profiles',
-      resourceId: userId,
-      oldValue: oldData,
-      newValue: newData,
       severity: 'info'
     });
   }
 
-  static async logPasswordChange(userId: string, changedBy: string) {
+  static async logPasswordChange(userId?: string, changedBy?: string) {
     await this.log({
       action: 'user.password.changed',
       resourceType: 'auth',

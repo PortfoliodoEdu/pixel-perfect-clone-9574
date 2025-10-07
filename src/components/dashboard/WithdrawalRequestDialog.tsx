@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { AuditLogger } from "@/lib/auditLogger";
 
 interface WithdrawalRequestDialogProps {
   open: boolean;
@@ -73,6 +74,8 @@ export const WithdrawalRequestDialog = ({ open, onOpenChange, planId }: Withdraw
         .insert(sanitizedData);
 
       if (error) throw error;
+
+      await AuditLogger.logWithdrawalRequest(parseFloat(amount));
 
       toast({
         title: "Solicitação enviada",

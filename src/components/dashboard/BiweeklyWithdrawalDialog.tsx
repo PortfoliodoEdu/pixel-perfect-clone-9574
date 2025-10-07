@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
+import { AuditLogger } from "@/lib/auditLogger";
 
 interface BiweeklyWithdrawalDialogProps {
   open: boolean;
@@ -33,6 +34,8 @@ export const BiweeklyWithdrawalDialog = ({ open, onOpenChange, planId }: Biweekl
         .insert(sanitizedData);
 
       if (error) throw error;
+
+      await AuditLogger.logBiweeklyWithdrawalRequest();
 
       toast({
         title: "Solicitação enviada",

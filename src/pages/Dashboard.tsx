@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import logoImage from "@/assets/logo-prime.png";
+import { z } from "zod";
+import { AuditLogger } from "@/lib/auditLogger";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -25,6 +27,16 @@ const Dashboard = () => {
     type: 'withdrawal' | 'biweekly' | 'secondChance' | 'comments' | null;
     planId: string;
   }>({ type: null, planId: '' });
+  const [personalInfo, setPersonalInfo] = useState({
+    cpf: '',
+    endereco: '',
+    numero: '',
+    cep: '',
+    cidade: '',
+    estado: ''
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const user = session?.user || null;
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -79,6 +91,7 @@ const Dashboard = () => {
   };
 
   const handleLogout = async () => {
+    await AuditLogger.logLogout();
     await supabase.auth.signOut();
     navigate("/");
   };
@@ -101,6 +114,58 @@ const Dashboard = () => {
 
   const closeDialog = () => {
     setActiveDialog({ type: null, planId: '' });
+  };
+
+  const personalInfoSchema = z.object({
+    cpf: z.string().regex(/^\d{11}$/, "CPF deve conter 11 dígitos").optional().or(z.literal('')),
+    endereco: z.string().max(200, "Endereço muito longo").optional().or(z.literal('')),
+    numero: z.string().max(10, "Número muito longo").optional().or(z.literal('')),
+    cep: z.string().regex(/^\d{8}$/, "CEP deve conter 8 dígitos").optional().or(z.literal('')),
+    cidade: z.string().max(100, "Cidade muito longa").optional().or(z.literal('')),
+    estado: z.string().max(2, "Estado deve ter 2 caracteres").optional().or(z.literal(''))
+  });
+
+  const handleSavePersonalInfo = async () => {
+    if (!user) return;
+
+    try {
+      setIsSaving(true);
+      
+      const validation = personalInfoSchema.safeParse(personalInfo);
+      if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+        return;
+      }
+
+      const sanitizedData = {
+        informacoes_personalizadas: JSON.stringify({
+          cpf: personalInfo.cpf.trim(),
+          endereco: personalInfo.endereco.trim(),
+          numero: personalInfo.numero.trim(),
+          cep: personalInfo.cep.trim(),
+          cidade: personalInfo.cidade.trim(),
+          estado: personalInfo.estado.trim().toUpperCase()
+        })
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(sanitizedData)
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      await AuditLogger.logProfileUpdate();
+      
+      toast.success("Informações salvas com sucesso");
+
+      loadUserData(user.id);
+    } catch (error: any) {
+      console.error('Error saving personal info:', error);
+      toast.error("Ocorreu um erro ao salvar as informações");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -339,6 +404,9 @@ const Dashboard = () => {
                   <label className="text-sm text-foreground">CPF</label>
                   <input 
                     type="text" 
+                    value={personalInfo.cpf}
+                    onChange={(e) => setPersonalInfo({...personalInfo, cpf: e.target.value.replace(/\D/g, '').slice(0, 11)})}
+                    placeholder="Apenas números"
                     className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
                   />
                 </div>
@@ -346,6 +414,8 @@ const Dashboard = () => {
                   <label className="text-sm text-foreground">Rua e Bairro</label>
                   <input 
                     type="text" 
+                    value={personalInfo.endereco}
+                    onChange={(e) => setPersonalInfo({...personalInfo, endereco: e.target.value})}
                     className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
                   />
                 </div>
@@ -353,6 +423,8 @@ const Dashboard = () => {
                   <label className="text-sm text-foreground">Número residencial</label>
                   <input 
                     type="text" 
+                    value={personalInfo.numero}
+                    onChange={(e) => setPersonalInfo({...personalInfo, numero: e.target.value})}
                     className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
                   />
                 </div>
@@ -360,6 +432,9 @@ const Dashboard = () => {
                   <label className="text-sm text-foreground">CEP</label>
                   <input 
                     type="text" 
+                    value={personalInfo.cep}
+                    onChange={(e) => setPersonalInfo({...personalInfo, cep: e.target.value.replace(/\D/g, '').slice(0, 8)})}
+                    placeholder="Apenas números"
                     className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
                   />
                 </div>
@@ -367,6 +442,8 @@ const Dashboard = () => {
                   <label className="text-sm text-foreground">Cidade</label>
                   <input 
                     type="text" 
+                    value={personalInfo.cidade}
+                    onChange={(e) => setPersonalInfo({...personalInfo, cidade: e.target.value})}
                     className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
                   />
                 </div>
@@ -374,6 +451,10 @@ const Dashboard = () => {
                   <label className="text-sm text-foreground">Estado</label>
                   <input 
                     type="text" 
+                    value={personalInfo.estado}
+                    onChange={(e) => setPersonalInfo({...personalInfo, estado: e.target.value.toUpperCase().slice(0, 2)})}
+                    placeholder="Ex: SP"
+                    maxLength={2}
                     className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
                   />
                 </div>
@@ -391,8 +472,12 @@ const Dashboard = () => {
                 <p className="text-sm text-foreground/70 mb-4">
                   Ao salvar, você está de acordo com o nosso regulamento atual. Vale lembrar que qualquer saque é efetuado apenas para chave PIX cadastrada no CPF do trader.
                 </p>
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-12 py-3">
-                  SALVAR
+                <Button 
+                  onClick={handleSavePersonalInfo}
+                  disabled={isSaving}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-12 py-3"
+                >
+                  {isSaving ? "SALVANDO..." : "SALVAR"}
                 </Button>
               </div>
             </div>

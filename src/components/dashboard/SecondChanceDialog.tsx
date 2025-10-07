@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
+import { AuditLogger } from "@/lib/auditLogger";
 
 interface SecondChanceDialogProps {
   open: boolean;
@@ -33,6 +34,8 @@ export const SecondChanceDialog = ({ open, onOpenChange, planId }: SecondChanceD
         .insert(sanitizedData);
 
       if (error) throw error;
+
+      await AuditLogger.logSecondChanceRequest();
 
       toast({
         title: "Solicitação enviada",

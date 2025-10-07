@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Session } from "@supabase/supabase-js";
+import { AuditLogger } from "@/lib/auditLogger";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -91,7 +92,12 @@ const Auth = () => {
         password: formData.password,
       });
 
-      if (error) throw error;
+      if (error) {
+        await AuditLogger.logFailedLogin(formData.email);
+        throw error;
+      }
+
+      await AuditLogger.logLogin();
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");
     } finally {

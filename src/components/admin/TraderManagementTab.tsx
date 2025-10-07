@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AuditLogger } from "@/lib/auditLogger";
 
 interface Profile {
   id: string;
@@ -21,6 +23,7 @@ export const TraderManagementTab = () => {
   const [loading, setLoading] = useState(true);
   const [newPassword, setNewPassword] = useState("");
   const [comment, setComment] = useState("");
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
   useEffect(() => {
     loadTraders();
@@ -67,11 +70,8 @@ export const TraderManagementTab = () => {
     }
   };
 
-  const handleChangePassword = async () => {
-    if (!selectedTrader || !newPassword) {
-      toast.error("Selecione um trader e digite uma nova senha");
-      return;
-    }
+  const confirmPasswordChange = async () => {
+    if (!selectedTrader || !newPassword) return;
 
     try {
       const { error } = await supabase.auth.admin.updateUserById(
@@ -81,11 +81,22 @@ export const TraderManagementTab = () => {
 
       if (error) throw error;
 
+      await AuditLogger.logPasswordChange(selectedTrader.id);
+
       toast.success("Senha alterada com sucesso!");
       setNewPassword("");
+      setShowPasswordConfirm(false);
     } catch (error: any) {
-      toast.error("Erro ao alterar senha: " + error.message);
+      toast.error("Ocorreu um erro ao alterar a senha");
     }
+  };
+
+  const handleChangePassword = () => {
+    if (!selectedTrader || !newPassword) {
+      toast.error("Selecione um trader e digite uma nova senha");
+      return;
+    }
+    setShowPasswordConfirm(true);
   };
 
   const handleAddComment = async () => {
@@ -207,6 +218,24 @@ export const TraderManagementTab = () => {
             Selecione um trader para gerenciar
           </div>
         )}
+
+        <AlertDialog open={showPasswordConfirm} onOpenChange={setShowPasswordConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Alteração de Senha</AlertDialogTitle>
+              <AlertDialogDescription>
+                Você está prestes a alterar a senha de <strong>{selectedTrader?.nome}</strong>. 
+                Esta ação não pode ser desfeita. Deseja continuar?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmPasswordChange}>
+                Confirmar Alteração
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
