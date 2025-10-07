@@ -266,13 +266,136 @@ const Dashboard = () => {
               ))
             )}
 
-            {/* Document Upload Section */}
-            {session && (
-              <DocumentUpload
-                userId={session.user.id}
-                onUploadComplete={() => loadUserData(session.user.id)}
-              />
-            )}
+            {/* Status da plataforma Section */}
+            <div className="bg-white rounded-lg p-8 space-y-6">
+              <h3 className="text-3xl font-bold text-foreground">Status da plataforma</h3>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded-full bg-destructive"></div>
+                <span className="text-foreground">A plataforma não está ativa</span>
+              </div>
+              <div className="flex gap-3">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8">
+                  ATIVAR PROFIT ONE
+                </Button>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8">
+                  ATIVAR PROFIT PRO
+                </Button>
+                <Button className="bg-foreground hover:bg-foreground/90 text-white font-bold px-8">
+                  DESATIVAR PLANO
+                </Button>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-foreground">R$ 90,00 por mês</p>
+                  <p className="text-sm text-foreground/70">Primeiro mês grátis para novos usuários</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">R$ 220,00 por mês</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Informações cadastrais Section */}
+            <div className="bg-white rounded-lg p-8 space-y-6">
+              <div>
+                <h3 className="text-3xl font-bold text-foreground mb-2">Informações cadastrais</h3>
+                <p className="text-foreground/70">
+                  Preencha todos os dados para que você não tenha nenhum problema ao solicitar um saque.
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm text-foreground">Nome completo</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                    defaultValue={profile?.nome}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-foreground">Data de nascimento</label>
+                  <input 
+                    type="date" 
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-foreground">Telefone</label>
+                  <input 
+                    type="tel" 
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-foreground">Email</label>
+                  <input 
+                    type="email" 
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                    defaultValue={profile?.email}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-foreground">CPF</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-foreground">Rua e Bairro</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-foreground">Número residencial</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-foreground">CEP</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-foreground">Cidade</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-foreground">Estado</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                  />
+                </div>
+              </div>
+
+              {/* Document Upload Buttons */}
+              {session && (
+                <DocumentUpload
+                  userId={session.user.id}
+                  onUploadComplete={() => loadUserData(session.user.id)}
+                />
+              )}
+
+              <div className="pt-4">
+                <p className="text-sm text-foreground/70 mb-4">
+                  Ao salvar, você está de acordo com o nosso regulamento atual. Vale lembrar que qualquer saque é efetuado apenas para chave PIX cadastrada no CPF do trader.
+                </p>
+                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-12 py-3">
+                  SALVAR
+                </Button>
+              </div>
+            </div>
 
             {/* Status Legend */}
             <div className="bg-white rounded-lg p-6 mt-8">
