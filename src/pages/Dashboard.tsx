@@ -10,6 +10,7 @@ import { CommentsDialog } from "@/components/dashboard/CommentsDialog";
 import { DocumentUpload } from "@/components/dashboard/DocumentUpload";
 import { ProfilePictureUpload } from "@/components/dashboard/ProfilePictureUpload";
 import { UserMenu } from "@/components/dashboard/UserMenu";
+import { PlanTimeline } from "@/components/dashboard/PlanTimeline";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
@@ -315,19 +316,7 @@ const Dashboard = () => {
                   {/* Timeline */}
                   <div className="px-6 pb-6 space-y-2 border-t pt-4">
                     <div className="text-sm font-medium text-foreground mb-3">Linha do tempo</div>
-                    {plano.historico_observacoes && plano.historico_observacoes.length > 0 ? (
-                      <div className="text-sm text-foreground/70 space-y-1">
-                        {plano.historico_observacoes.map((obs: any) => (
-                          <div key={obs.id} className="flex items-center gap-2">
-                            <span>{new Date(obs.created_at).toLocaleDateString('pt-BR')}</span>
-                            <span>|</span>
-                            <span>{obs.observacao}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-foreground/70">Nenhuma solicitação.</div>
-                    )}
+                    <PlanTimeline entries={plano.historico_observacoes || []} />
                   </div>
                 </div>
               ))

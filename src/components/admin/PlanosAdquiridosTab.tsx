@@ -3,22 +3,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, MessageSquare } from "lucide-react";
+import { Plus, Pencil, Trash2, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { TimelineUpdateDialog } from "./TimelineUpdateDialog";
 
 const PlanosAdquiridosTab = () => {
   const [planosAdquiridos, setPlanosAdquiridos] = useState<any[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
   const [planos, setPlanos] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
+  const [timelineOpen, setTimelineOpen] = useState(false);
   const [selectedPlano, setSelectedPlano] = useState<any>(null);
-  const [newObservacao, setNewObservacao] = useState("");
+  const [selectedTimelineEntry, setSelectedTimelineEntry] = useState<any>(null);
+  const [timelineUpdateOpen, setTimelineUpdateOpen] = useState(false);
   const [editingPlano, setEditingPlano] = useState<any>(null);
   const [formData, setFormData] = useState<{
     cliente_id: string;
@@ -141,7 +142,7 @@ const PlanosAdquiridosTab = () => {
     }
   };
 
-  const openHistory = async (plano: any) => {
+  const openTimeline = async (plano: any) => {
     const { data } = await supabase
       .from("historico_observacoes")
       .select("*")
@@ -149,27 +150,12 @@ const PlanosAdquiridosTab = () => {
       .order("created_at", { ascending: false });
     
     setSelectedPlano({ ...plano, historico: data || [] });
-    setHistoryOpen(true);
+    setTimelineOpen(true);
   };
 
-  const addObservacao = async () => {
-    if (!newObservacao.trim()) return;
-    
-    try {
-      const { error } = await supabase
-        .from("historico_observacoes")
-        .insert([{
-          plano_adquirido_id: selectedPlano.id,
-          observacao: newObservacao,
-        }]);
-      
-      if (error) throw error;
-      toast.success("Observação adicionada!");
-      setNewObservacao("");
-      openHistory(selectedPlano);
-    } catch (error: any) {
-      toast.error(error.message);
-    }
+  const handleTimelineEntryClick = (entry: any) => {
+    setSelectedTimelineEntry(entry);
+    setTimelineUpdateOpen(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -294,8 +280,8 @@ const PlanosAdquiridosTab = () => {
                   <Button size="sm" variant="outline" onClick={() => handleEdit(pa)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => openHistory(pa)}>
-                    <MessageSquare className="h-4 w-4" />
+                  <Button size="sm" variant="outline" onClick={() => openTimeline(pa)} title="Ver linha do tempo">
+                    <Clock className="h-4 w-4" />
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => handleDelete(pa.id)}>
                     <Trash2 className="h-4 w-4" />
@@ -307,33 +293,54 @@ const PlanosAdquiridosTab = () => {
         </TableBody>
       </Table>
 
-      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
-        <DialogContent className="max-w-2xl">
+      <Dialog open={timelineOpen} onOpenChange={setTimelineOpen}>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Histórico de Observações</DialogTitle>
+            <DialogTitle>Linha do Tempo - {selectedPlano?.planos?.nome_plano}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className="space-y-3 max-h-96 overflow-y-auto">
               {selectedPlano?.historico?.map((h: any) => (
-                <div key={h.id} className="border-l-2 border-primary pl-4 py-2">
-                  <p className="text-sm text-muted-foreground">
+                <div 
+                  key={h.id} 
+                  className="border-l-2 border-primary pl-4 py-3 hover:bg-muted/50 cursor-pointer rounded"
+                  onClick={() => handleTimelineEntryClick(h)}
+                >
+                  <p className="text-sm text-muted-foreground mb-1">
                     {new Date(h.created_at).toLocaleString("pt-BR")}
                   </p>
-                  <p>{h.observacao}</p>
+                  <div className="text-sm space-y-1">
+                    {h.tipo_evento && <p><strong>Tipo:</strong> {h.tipo_evento}</p>}
+                    {h.valor_solicitado && (
+                      <p><strong>Valor solicitado:</strong> {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(h.valor_solicitado)}</p>
+                    )}
+                    {h.valor_final && (
+                      <p><strong>Valor final:</strong> {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(h.valor_final)}</p>
+                    )}
+                    <p><strong>Status:</strong> {h.status_evento}</p>
+                    {h.comprovante_url && (
+                      <a href={h.comprovante_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                        Ver comprovante
+                      </a>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
-            <div className="flex gap-2">
-              <Textarea
-                placeholder="Nova observação..."
-                value={newObservacao}
-                onChange={(e) => setNewObservacao(e.target.value)}
-              />
-              <Button onClick={addObservacao}>Adicionar</Button>
-            </div>
+            <p className="text-sm text-muted-foreground">Clique em uma entrada para editá-la</p>
           </div>
         </DialogContent>
       </Dialog>
+
+      <TimelineUpdateDialog
+        open={timelineUpdateOpen}
+        onOpenChange={setTimelineUpdateOpen}
+        timelineEntry={selectedTimelineEntry}
+        onUpdate={() => {
+          loadData();
+          if (selectedPlano) openTimeline(selectedPlano);
+        }}
+      />
     </div>
   );
 };

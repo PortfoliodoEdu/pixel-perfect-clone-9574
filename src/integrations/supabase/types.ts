@@ -16,22 +16,40 @@ export type Database = {
     Tables: {
       historico_observacoes: {
         Row: {
+          comprovante_url: string | null
           created_at: string | null
           id: string
           observacao: string
           plano_adquirido_id: string
+          solicitacao_id: string | null
+          status_evento: string | null
+          tipo_evento: string | null
+          valor_final: number | null
+          valor_solicitado: number | null
         }
         Insert: {
+          comprovante_url?: string | null
           created_at?: string | null
           id?: string
           observacao: string
           plano_adquirido_id: string
+          solicitacao_id?: string | null
+          status_evento?: string | null
+          tipo_evento?: string | null
+          valor_final?: number | null
+          valor_solicitado?: number | null
         }
         Update: {
+          comprovante_url?: string | null
           created_at?: string | null
           id?: string
           observacao?: string
           plano_adquirido_id?: string
+          solicitacao_id?: string | null
+          status_evento?: string | null
+          tipo_evento?: string | null
+          valor_final?: number | null
+          valor_solicitado?: number | null
         }
         Relationships: [
           {
@@ -39,6 +57,13 @@ export type Database = {
             columns: ["plano_adquirido_id"]
             isOneToOne: false
             referencedRelation: "planos_adquiridos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historico_observacoes_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "solicitacoes"
             referencedColumns: ["id"]
           },
         ]
