@@ -124,32 +124,140 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string | null
+          documentos_completos: boolean | null
           email: string
           foto_perfil: string | null
           id: string
           informacoes_personalizadas: string | null
           nome: string
+          pagamento_ativo: boolean | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
+          documentos_completos?: boolean | null
           email: string
           foto_perfil?: string | null
           id: string
           informacoes_personalizadas?: string | null
           nome: string
+          pagamento_ativo?: boolean | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
+          documentos_completos?: boolean | null
           email?: string
           foto_perfil?: string | null
           id?: string
           informacoes_personalizadas?: string | null
           nome?: string
+          pagamento_ativo?: boolean | null
           updated_at?: string | null
         }
         Relationships: []
+      }
+      solicitacoes: {
+        Row: {
+          atendida_em: string | null
+          atendida_por: string | null
+          created_at: string | null
+          descricao: string | null
+          id: string
+          plano_adquirido_id: string | null
+          resposta_admin: string | null
+          status: string
+          tipo_solicitacao: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          atendida_em?: string | null
+          atendida_por?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          plano_adquirido_id?: string | null
+          resposta_admin?: string | null
+          status?: string
+          tipo_solicitacao: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          atendida_em?: string | null
+          atendida_por?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          plano_adquirido_id?: string | null
+          resposta_admin?: string | null
+          status?: string
+          tipo_solicitacao?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitacoes_atendida_por_fkey"
+            columns: ["atendida_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_plano_adquirido_id_fkey"
+            columns: ["plano_adquirido_id"]
+            isOneToOne: false
+            referencedRelation: "planos_adquiridos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_documents: {
+        Row: {
+          arquivo_url: string
+          created_at: string | null
+          id: string
+          status: string
+          tipo_documento: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          arquivo_url: string
+          created_at?: string | null
+          id?: string
+          status?: string
+          tipo_documento: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          arquivo_url?: string
+          created_at?: string | null
+          id?: string
+          status?: string
+          tipo_documento?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
