@@ -123,36 +123,60 @@ export type Database = {
       }
       profiles: {
         Row: {
+          cep: string | null
+          cidade: string | null
+          cpf: string | null
           created_at: string | null
+          data_nascimento: string | null
           documentos_completos: boolean | null
           email: string
+          estado: string | null
           foto_perfil: string | null
           id: string
           informacoes_personalizadas: string | null
           nome: string
+          numero_residencial: string | null
           pagamento_ativo: boolean | null
+          rua_bairro: string | null
+          telefone: string | null
           updated_at: string | null
         }
         Insert: {
+          cep?: string | null
+          cidade?: string | null
+          cpf?: string | null
           created_at?: string | null
+          data_nascimento?: string | null
           documentos_completos?: boolean | null
           email: string
+          estado?: string | null
           foto_perfil?: string | null
           id: string
           informacoes_personalizadas?: string | null
           nome: string
+          numero_residencial?: string | null
           pagamento_ativo?: boolean | null
+          rua_bairro?: string | null
+          telefone?: string | null
           updated_at?: string | null
         }
         Update: {
+          cep?: string | null
+          cidade?: string | null
+          cpf?: string | null
           created_at?: string | null
+          data_nascimento?: string | null
           documentos_completos?: boolean | null
           email?: string
+          estado?: string | null
           foto_perfil?: string | null
           id?: string
           informacoes_personalizadas?: string | null
           nome?: string
+          numero_residencial?: string | null
           pagamento_ativo?: boolean | null
+          rua_bairro?: string | null
+          telefone?: string | null
           updated_at?: string | null
         }
         Relationships: []
