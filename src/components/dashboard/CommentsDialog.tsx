@@ -1,7 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { X } from "lucide-react";
 
 interface CommentsDialogProps {
   open: boolean;
@@ -10,35 +8,31 @@ interface CommentsDialogProps {
 }
 
 export const CommentsDialog = ({ open, onOpenChange, planId }: CommentsDialogProps) => {
-  const [comments, setComments] = useState("");
-  const [attachments, setAttachments] = useState("");
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Comentários e Anexos</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 pt-4">
-          <div className="space-y-2">
-            <Label htmlFor="comments">Comentários</Label>
-            <Textarea
-              id="comments"
-              value={comments}
-              onChange={(e) => setComments(e.target.value)}
-              className="bg-muted/50 min-h-[100px]"
-              placeholder="Adicione seus comentários aqui..."
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="attachments">Anexos</Label>
-            <Textarea
-              id="attachments"
-              value={attachments}
-              onChange={(e) => setAttachments(e.target.value)}
-              className="bg-muted/50 min-h-[100px]"
-              placeholder="Adicione informações sobre anexos..."
-            />
+      <DialogContent className="sm:max-w-[700px] bg-white p-12">
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+        >
+          <X className="h-6 w-6" />
+          <span className="sr-only">Close</span>
+        </button>
+
+        <div className="space-y-8">
+          <DialogHeader>
+            <DialogTitle className="text-4xl font-bold text-foreground">
+              Comentários
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            <div className="bg-muted/50 rounded-xl p-6 min-h-[200px]">
+              <p className="text-foreground/80 text-base whitespace-pre-wrap">
+                {/* Comments will be loaded from database */}
+                Nenhum comentário disponível.
+              </p>
+            </div>
           </div>
         </div>
       </DialogContent>

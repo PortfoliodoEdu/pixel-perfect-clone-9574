@@ -1,11 +1,12 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { AuditLogger } from "@/lib/auditLogger";
+import { X } from "lucide-react";
 
 interface WithdrawalRequestDialogProps {
   open: boolean;
@@ -13,84 +14,41 @@ interface WithdrawalRequestDialogProps {
   planId: string;
 }
 
-export const WithdrawalRequestDialog = ({ open, onOpenChange, planId }: WithdrawalRequestDialogProps) => {
-  const [name, setName] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [amount, setAmount] = useState("");
+export const WithdrawalRequestDialog = ({
+  open,
+  onOpenChange,
+  planId,
+}: WithdrawalRequestDialogProps) => {
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    nomeCompleto: "",
+    cpf: "",
+    valorSaque: "",
+  });
 
-  const validateInput = () => {
-    if (!name.trim() || name.length > 100) {
-      toast({
-        title: "Erro de validação",
-        description: "Nome inválido",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    const cpfRegex = /^\d{11}$/;
-    if (!cpfRegex.test(cpf.replace(/\D/g, ''))) {
-      toast({
-        title: "Erro de validação",
-        description: "CPF inválido",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount <= 0 || numAmount > 1000000) {
-      toast({
-        title: "Erro de validação",
-        description: "Valor inválido",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateInput()) return;
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
-      const sanitizedData = {
+      const { error } = await supabase.from("solicitacoes").insert({
         user_id: user.id,
         plano_adquirido_id: planId,
         tipo_solicitacao: "saque",
-        descricao: `Solicitação de saque - Nome: ${name.trim()}, CPF: ${cpf.replace(/\D/g, '')}, Valor: R$ ${parseFloat(amount).toFixed(2)}`,
-        status: "pendente"
-      };
-
-      const { error } = await supabase
-        .from("solicitacoes")
-        .insert(sanitizedData);
+        descricao: `Solicitação de saque - Nome: ${formData.nomeCompleto}, CPF: ${formData.cpf}, Valor: R$ ${formData.valorSaque}`,
+      });
 
       if (error) throw error;
 
-      await AuditLogger.logWithdrawalRequest(parseFloat(amount));
-
-      toast({
-        title: "Solicitação enviada",
-        description: "Sua solicitação de saque foi enviada com sucesso.",
-      });
-      setName("");
-      setCpf("");
-      setAmount("");
+      await AuditLogger.logWithdrawalRequest(parseFloat(formData.valorSaque));
+      toast.success("Solicitação de saque enviada com sucesso!");
       onOpenChange(false);
+      setFormData({ nomeCompleto: "", cpf: "", valorSaque: "" });
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao processar sua solicitação",
-        variant: "destructive"
-      });
+      toast.error("Erro ao enviar solicitação: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -98,50 +56,86 @@ export const WithdrawalRequestDialog = ({ open, onOpenChange, planId }: Withdraw
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center">Solicitação de Saque</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 pt-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome completo</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="bg-muted/50"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="cpf">CPF</Label>
+      <DialogContent className="sm:max-w-[700px] bg-white p-12">
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+        >
+          <X className="h-6 w-6" />
+          <span className="sr-only">Close</span>
+        </button>
+
+        <div className="space-y-8">
+          <DialogHeader>
+            <DialogTitle className="text-4xl font-bold text-foreground">
+              Solicitação de Saque
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Nome completo */}
+            <div className="space-y-3">
+              <Label htmlFor="nomeCompleto" className="text-foreground text-lg font-normal">
+                Nome completo
+              </Label>
               <Input
-                id="cpf"
-                value={cpf}
-                onChange={(e) => setCpf(e.target.value)}
-                className="bg-muted/50"
+                id="nomeCompleto"
+                type="text"
+                required
+                value={formData.nomeCompleto}
+                onChange={(e) => setFormData({ ...formData, nomeCompleto: e.target.value })}
+                className="h-14 text-base border-input bg-muted/50 rounded-xl"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="amount">Valor do saque</Label>
-              <Input
-                id="amount"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="bg-muted/50"
-              />
+
+            {/* CPF e Valor do saque lado a lado */}
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label htmlFor="cpf" className="text-foreground text-lg font-normal">
+                  CPF
+                </Label>
+                <Input
+                  id="cpf"
+                  type="text"
+                  required
+                  value={formData.cpf}
+                  onChange={(e) => setFormData({ ...formData, cpf: e.target.value.replace(/\D/g, '') })}
+                  className="h-14 text-base border-input bg-muted/50 rounded-xl"
+                  maxLength={11}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="valorSaque" className="text-foreground text-lg font-normal">
+                  Valor do saque
+                </Label>
+                <Input
+                  id="valorSaque"
+                  type="number"
+                  required
+                  step="0.01"
+                  value={formData.valorSaque}
+                  onChange={(e) => setFormData({ ...formData, valorSaque: e.target.value })}
+                  className="h-14 text-base border-input bg-muted/50 rounded-xl"
+                />
+              </div>
             </div>
-          </div>
-          <p className="text-sm text-foreground/70">
-            Ao solicitar o saque, você está de acordo com o regulamento e está ciente que o PIX irá ser enviado na chave CPF.
-          </p>
-          <Button 
-            onClick={handleSubmit}
-            disabled={loading}
-            className="w-full bg-[#FF4500] hover:bg-[#FF4500]/90 text-white font-bold"
-          >
-            {loading ? "Enviando..." : "SOLICITAR SAQUE"}
-          </Button>
+
+            {/* Botão e texto */}
+            <div className="flex items-start gap-8 pt-4">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="bg-primary hover:bg-primary/90 text-white font-bold text-xl px-12 py-7 rounded-xl uppercase shrink-0"
+              >
+                {loading ? "PROCESSANDO..." : "SOLICITAR SAQUE"}
+              </Button>
+
+              <p className="text-foreground/70 text-sm leading-relaxed pt-2">
+                Ao solicitar o saque, você está de acordo com o regulamento e está ciente que o PIX irá ser enviado na chave CPF.
+              </p>
+            </div>
+          </form>
         </div>
       </DialogContent>
     </Dialog>

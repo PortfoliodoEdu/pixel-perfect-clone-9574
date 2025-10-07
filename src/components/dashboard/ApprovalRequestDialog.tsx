@@ -3,20 +3,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AuditLogger } from "@/lib/auditLogger";
 import { X } from "lucide-react";
 
-interface SecondChanceDialogProps {
+interface ApprovalRequestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  planId: string;
+  planoId: string;
 }
 
-export const SecondChanceDialog = ({
+export const ApprovalRequestDialog = ({
   open,
   onOpenChange,
-  planId,
-}: SecondChanceDialogProps) => {
+  planoId,
+}: ApprovalRequestDialogProps) => {
   const [loading, setLoading] = useState(false);
 
   const handleRequest = async () => {
@@ -27,14 +26,13 @@ export const SecondChanceDialog = ({
 
       const { error } = await supabase.from("solicitacoes").insert({
         user_id: user.id,
-        plano_adquirido_id: planId,
-        tipo_solicitacao: "segunda_chance",
-        descricao: "Solicitação de segunda chance no teste",
+        plano_adquirido_id: planoId,
+        tipo_solicitacao: "aprovacao_teste",
+        descricao: "Solicitação de aprovação no teste",
       });
 
       if (error) throw error;
 
-      await AuditLogger.logSecondChanceRequest();
       toast.success("Solicitação enviada com sucesso!");
       onOpenChange(false);
     } catch (error: any) {
@@ -58,12 +56,12 @@ export const SecondChanceDialog = ({
         <div className="flex flex-col items-center text-center space-y-8">
           <DialogHeader className="space-y-4">
             <DialogTitle className="text-4xl font-bold text-foreground leading-tight">
-              Deseja solicitar a segunda chance no teste?
+              Deseja solicitar a aprovação no seu teste?
             </DialogTitle>
           </DialogHeader>
 
           <p className="text-foreground/80 text-lg max-w-md">
-            Caso esteja em um plano com teste e queira recomeçar, pode solicitar por aqui!
+            Caso tenha batido a meta, solicite a análise clicando no botão abaixo.
           </p>
 
           <Button
@@ -71,7 +69,7 @@ export const SecondChanceDialog = ({
             disabled={loading}
             className="bg-primary hover:bg-primary/90 text-white font-bold text-xl px-16 py-7 rounded-xl uppercase"
           >
-            {loading ? "PROCESSANDO..." : "QUERO RECOMEÇAR"}
+            {loading ? "PROCESSANDO..." : "SOLICITAR APROVAÇÃO"}
           </Button>
         </div>
       </DialogContent>
