@@ -530,6 +530,149 @@ Antes de considerar a migração completa:
 
 ---
 
+## 🔐 Passo EXTRA: Configurar Backup e Restauração (CRÍTICO!)
+
+**⚠️ MUITO IMPORTANTE:** Mesmo com backup da Hostinger, você PRECISA de backup próprio do PostgreSQL!
+
+### Por que?
+
+- ✅ Snapshot da Hostinger = servidor inteiro (pode restaurar banco corrompido)
+- ✅ Backup PostgreSQL = dados transacionais e consistentes
+- ✅ Redundância: Local + Nuvem + Hostinger = 3 camadas de proteção
+
+### Scripts Prontos
+
+Todos os scripts de backup estão em `scripts/`:
+
+```bash
+scripts/
+├── backup-database.sh      # Backup diário do PostgreSQL
+├── backup-storage.sh        # Backup dos arquivos (fotos, docs)
+├── backup-to-cloud.sh       # Upload para Google Drive/Dropbox/S3
+├── restore-database.sh      # Restaurar banco de dados
+├── test-restore.sh          # Testar se backup funciona
+└── README.md                # Documentação completa
+```
+
+### Configuração Rápida (5 minutos)
+
+**1. Preparar ambiente**
+```bash
+# No servidor Hostinger via SSH
+sudo mkdir -p /home/backups/supabase
+sudo chown $USER:$USER /home/backups/supabase
+
+# Copiar scripts
+sudo cp scripts/*.sh /usr/local/bin/
+sudo chmod +x /usr/local/bin/*.sh
+```
+
+**2. Configurar senha PostgreSQL**
+```bash
+echo "localhost:5432:*:postgres:SUA_SENHA" > ~/.pgpass
+chmod 600 ~/.pgpass
+```
+
+**3. Automatizar com Cron**
+```bash
+crontab -e
+```
+
+Adicionar:
+```bash
+# Backup diário às 2h
+0 2 * * * /usr/local/bin/backup-database.sh >> /home/backups/supabase/cron.log 2>&1
+
+# Backup storage às 3h
+0 3 * * * /usr/local/bin/backup-storage.sh >> /home/backups/supabase/cron.log 2>&1
+
+# Upload nuvem às 4h
+0 4 * * * /usr/local/bin/backup-to-cloud.sh >> /home/backups/supabase/cron.log 2>&1
+
+# Teste mensal (dia 1 às 5h)
+0 5 1 * * /usr/local/bin/test-restore.sh >> /home/backups/supabase/cron.log 2>&1
+```
+
+**4. Configurar upload para nuvem (opcional mas recomendado)**
+```bash
+# Instalar Rclone
+curl https://rclone.org/install.sh | sudo bash
+
+# Configurar Google Drive, Dropbox, S3, etc
+rclone config
+```
+
+### Teste Manual
+
+```bash
+# Testar backup
+/usr/local/bin/backup-database.sh
+
+# Testar restauração (sem afetar produção)
+/usr/local/bin/test-restore.sh
+
+# Ver logs
+tail -f /home/backups/supabase/backup.log
+```
+
+### Monitoramento
+
+**Verificar se backups estão funcionando:**
+```bash
+# Listar backups
+ls -lh /home/backups/supabase/
+
+# Ver últimos logs
+tail -20 /home/backups/supabase/backup.log
+
+# Verificar espaço
+df -h /home/backups
+```
+
+### O que cada backup faz?
+
+| Tipo | O que salva | Retenção | Tamanho estimado |
+|------|-------------|----------|------------------|
+| PostgreSQL | Tabelas, RLS, functions | 7 dias | ~10-50MB |
+| Storage | Fotos, documentos | 7 dias | Varia |
+| Nuvem | Cópia de tudo | Ilimitado | Mesmo |
+| Hostinger | Servidor inteiro | Conforme plano | GB |
+
+### Restaurar em Caso de Desastre
+
+```bash
+# 1. Listar backups disponíveis
+ls -lh /home/backups/supabase/supabase_db_*.backup.gz
+
+# 2. Restaurar (CUIDADO: substitui dados!)
+sudo /usr/local/bin/restore-database.sh /home/backups/supabase/supabase_db_20250107.backup.gz
+
+# 3. Verificar se funcionou
+psql -U postgres -c "SELECT COUNT(*) FROM profiles;"
+```
+
+### Checklist de Segurança de Backup
+
+- [ ] Backup automático diário configurado
+- [ ] Upload para nuvem funcionando
+- [ ] Teste de restauração mensal agendado
+- [ ] Logs sendo monitorados
+- [ ] Espaço em disco monitorado (não encher!)
+- [ ] Múltiplas cópias (local + nuvem + hostinger)
+- [ ] Documentação de como restaurar
+- [ ] Senha do PostgreSQL segura no `.pgpass`
+
+### 📚 Documentação Completa
+
+Veja `scripts/README.md` para:
+- ✅ Instruções detalhadas de cada script
+- ✅ Troubleshooting comum
+- ✅ Configuração de alertas
+- ✅ Boas práticas
+- ✅ Opções de nuvem (Google Drive, S3, Dropbox, etc)
+
+---
+
 **Última atualização:** 2025-10-07  
-**Versão:** 1.0  
+**Versão:** 1.1 (+ Seção de Backup)  
 **Projeto:** Prime Capital - Sistema de Trading
