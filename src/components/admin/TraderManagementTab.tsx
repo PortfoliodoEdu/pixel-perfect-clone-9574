@@ -1,0 +1,213 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+interface Profile {
+  id: string;
+  nome: string;
+  email: string;
+  pagamento_ativo: boolean;
+}
+
+export const TraderManagementTab = () => {
+  const [traders, setTraders] = useState<Profile[]>([]);
+  const [selectedTrader, setSelectedTrader] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [newPassword, setNewPassword] = useState("");
+  const [comment, setComment] = useState("");
+
+  useEffect(() => {
+    loadTraders();
+  }, []);
+
+  const loadTraders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("nome");
+
+      if (error) throw error;
+      setTraders(data || []);
+    } catch (error: any) {
+      toast.error("Erro ao carregar traders: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTogglePayment = async (traderId: string, newStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ pagamento_ativo: newStatus })
+        .eq("id", traderId);
+
+      if (error) throw error;
+
+      setTraders((prev) =>
+        prev.map((t) =>
+          t.id === traderId ? { ...t, pagamento_ativo: newStatus } : t
+        )
+      );
+
+      if (selectedTrader?.id === traderId) {
+        setSelectedTrader({ ...selectedTrader, pagamento_ativo: newStatus });
+      }
+
+      toast.success("Status de pagamento atualizado!");
+    } catch (error: any) {
+      toast.error("Erro ao atualizar status: " + error.message);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!selectedTrader || !newPassword) {
+      toast.error("Selecione um trader e digite uma nova senha");
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.admin.updateUserById(
+        selectedTrader.id,
+        { password: newPassword }
+      );
+
+      if (error) throw error;
+
+      toast.success("Senha alterada com sucesso!");
+      setNewPassword("");
+    } catch (error: any) {
+      toast.error("Erro ao alterar senha: " + error.message);
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!selectedTrader || !comment) {
+      toast.error("Selecione um trader e digite um comentário");
+      return;
+    }
+
+    try {
+      // Get the trader's plans
+      const { data: planos } = await supabase
+        .from("planos_adquiridos")
+        .select("id")
+        .eq("cliente_id", selectedTrader.id)
+        .limit(1);
+
+      if (!planos || planos.length === 0) {
+        toast.error("Trader não possui planos adquiridos");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("historico_observacoes")
+        .insert({
+          plano_adquirido_id: planos[0].id,
+          observacao: comment,
+        });
+
+      if (error) throw error;
+
+      toast.success("Comentário adicionado!");
+      setComment("");
+    } catch (error: any) {
+      toast.error("Erro ao adicionar comentário: " + error.message);
+    }
+  };
+
+  if (loading) {
+    return <div className="p-8">Carregando traders...</div>;
+  }
+
+  return (
+    <div className="grid grid-cols-3 gap-6">
+      {/* Traders List */}
+      <div className="col-span-1 bg-white rounded-lg p-6 space-y-4">
+        <h3 className="text-lg font-bold">Traders</h3>
+        <div className="space-y-2 max-h-[600px] overflow-y-auto">
+          {traders.map((trader) => (
+            <div
+              key={trader.id}
+              onClick={() => setSelectedTrader(trader)}
+              className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                selectedTrader?.id === trader.id
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted hover:bg-muted/80"
+              }`}
+            >
+              <div className="font-medium">{trader.nome}</div>
+              <div className="text-sm opacity-80">{trader.email}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Trader Details */}
+      <div className="col-span-2 bg-white rounded-lg p-6 space-y-6">
+        {selectedTrader ? (
+          <>
+            <div>
+              <h3 className="text-lg font-bold mb-4">
+                Gerenciar: {selectedTrader.nome}
+              </h3>
+            </div>
+
+            {/* Payment Status */}
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <div>
+                <Label className="text-base font-medium">Status de Pagamento</Label>
+                <p className="text-sm text-muted-foreground">
+                  Determine se o pagamento do trader está ativo
+                </p>
+              </div>
+              <Switch
+                checked={selectedTrader.pagamento_ativo}
+                onCheckedChange={(checked) =>
+                  handleTogglePayment(selectedTrader.id, checked)
+                }
+              />
+            </div>
+
+            {/* Change Password */}
+            <div className="space-y-3">
+              <Label className="text-base font-medium">Alterar Senha</Label>
+              <div className="flex gap-3">
+                <Input
+                  type="password"
+                  placeholder="Nova senha"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <Button onClick={handleChangePassword}>Alterar</Button>
+              </div>
+            </div>
+
+            {/* Add Comment */}
+            <div className="space-y-3">
+              <Label className="text-base font-medium">Adicionar Comentário</Label>
+              <Textarea
+                placeholder="Digite um comentário sobre o trader..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={4}
+              />
+              <Button onClick={handleAddComment}>Adicionar Comentário</Button>
+            </div>
+          </>
+        ) : (
+          <div className="text-center text-muted-foreground py-12">
+            Selecione um trader para gerenciar
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

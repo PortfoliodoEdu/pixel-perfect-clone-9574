@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MoreVertical, Calendar, DollarSign, FileText, CheckSquare, Pencil, LogOut, Upload } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Calendar, DollarSign, FileText, CheckSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { WithdrawalRequestDialog } from "@/components/dashboard/WithdrawalRequestDialog";
 import { BiweeklyWithdrawalDialog } from "@/components/dashboard/BiweeklyWithdrawalDialog";
 import { SecondChanceDialog } from "@/components/dashboard/SecondChanceDialog";
 import { CommentsDialog } from "@/components/dashboard/CommentsDialog";
+import { DocumentUpload } from "@/components/dashboard/DocumentUpload";
+import { ProfilePictureUpload } from "@/components/dashboard/ProfilePictureUpload";
+import { UserMenu } from "@/components/dashboard/UserMenu";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import logoImage from "@/assets/logo-prime.png";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -80,6 +83,18 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  const handleBackToSite = () => {
+    window.location.href = "/";
+  };
+
+  const handleContratarPlano = () => {
+    window.location.href = "/";
+  };
+
+  const handleContatarSuporte = () => {
+    window.open("https://wa.me/", "_blank");
+  };
+
   const openDialog = (type: 'withdrawal' | 'biweekly' | 'secondChance' | 'comments', planId: string) => {
     setActiveDialog({ type, planId });
   };
@@ -110,21 +125,18 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header with gradient */}
-      <header className="gradient-header px-8 py-6 flex items-center justify-between">
+      <header className="gradient-header px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="bg-white rounded-full w-12 h-12 flex items-center justify-center">
-            <span className="text-primary font-bold text-xl italic">pi</span>
-          </div>
-          <h1 className="text-white text-3xl font-light">
+          <img src={logoImage} alt="Prime Capital" className="w-12 h-12 rounded-lg" />
+          <h1 className="text-white text-2xl font-light">
             prime<span className="font-light italic">capital</span>
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-white text-2xl font-bold">Painel do Trader</span>
-          <button onClick={handleLogout} className="text-white flex items-center gap-2 text-sm hover:opacity-90 transition-opacity">
-            <LogOut className="w-4 h-4" />
-            Sair
-          </button>
+          <span className="text-white text-xl font-bold">
+            Painel do Trader
+          </span>
+          <span className="text-white text-sm">- Voltar para o site</span>
         </div>
       </header>
 
@@ -133,33 +145,37 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto px-8 py-12">
           {/* Profile Section */}
           <div className="bg-white rounded-lg p-8 mb-8 relative">
-            <button className="absolute top-6 right-6">
-              <MoreVertical className="w-6 h-6 text-foreground" />
-            </button>
+            <div className="absolute top-6 right-6">
+              <UserMenu onLogout={handleLogout} onBackToSite={handleBackToSite} />
+            </div>
             
             <div className="flex items-center gap-8">
-              <Avatar className="w-40 h-40">
-                {profile?.foto_perfil ? (
-                  <AvatarImage src={profile.foto_perfil} />
-                ) : (
-                  <AvatarFallback className="bg-muted text-4xl">
-                    {profile?.nome?.split(' ').map((n: string) => n[0]).join('').substring(0, 2) || 'U'}
-                  </AvatarFallback>
-                )}
-              </Avatar>
+              <ProfilePictureUpload
+                userId={session!.user.id}
+                currentPhotoUrl={profile?.foto_perfil}
+                userName={profile?.nome || "Trader"}
+                onUploadComplete={(url) => setProfile({ ...profile, foto_perfil: url })}
+              />
               
               <div className="flex-1 space-y-4">
-                <h2 className="text-4xl font-bold text-foreground">
-                  Olá, <span className="text-primary">{profile?.nome || 'Trader'}</span>.
+                <h2 className="text-3xl font-bold text-foreground">
+                  Olá, <span className="text-primary">{profile?.nome || "Trader"}</span>.
                 </h2>
-                <p className="text-foreground/80 text-base">
-                  {profile?.informacoes_personalizadas || 'Seja bem vindo ao Painel do Trader. Aqui você poderá controlar todas as funções da sua conta na nossa mesa proprietária.'}
+                <p className="text-foreground/70 text-sm">
+                  {profile?.informacoes_personalizadas || 
+                    "Seja bem vindo ao Painel do Trader. Aqui você poderá controlar todas as funções da sua conta na nossa mesa proprietária."}
                 </p>
-                <div className="flex gap-4">
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 py-6 text-base">
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleContratarPlano}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-2.5 text-sm"
+                  >
                     COMPRAR UM PLANO
                   </Button>
-                  <Button className="bg-foreground hover:bg-foreground/90 text-white font-bold px-8 py-6 text-base">
+                  <Button
+                    onClick={handleContatarSuporte}
+                    className="bg-foreground hover:bg-foreground/90 text-white font-bold px-6 py-2.5 text-sm"
+                  >
                     CONTATAR SUPORTE
                   </Button>
                 </div>
@@ -169,11 +185,11 @@ const Dashboard = () => {
 
           {/* Plans Section */}
           <div className="space-y-6">
-            <h3 className="text-4xl font-bold text-foreground">Planos adquiridos</h3>
+            <h3 className="text-3xl font-bold text-foreground">Planos adquiridos</h3>
 
             {planosAdquiridos.length === 0 ? (
-              <div className="bg-white rounded-lg p-12 text-center">
-                <p className="text-foreground/70 text-lg">Você ainda não possui planos adquiridos.</p>
+              <div className="bg-white rounded-lg p-8 text-center">
+                <p className="text-foreground/70 text-base">Nenhum plano adquirido ainda</p>
               </div>
             ) : (
               planosAdquiridos.map((plano) => (
@@ -248,6 +264,14 @@ const Dashboard = () => {
                   </div>
                 </div>
               ))
+            )}
+
+            {/* Document Upload Section */}
+            {session && (
+              <DocumentUpload
+                userId={session.user.id}
+                onUploadComplete={() => loadUserData(session.user.id)}
+              />
             )}
 
             {/* Status Legend */}
