@@ -3,9 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, Package, ShoppingCart, FileText, UserCog } from "lucide-react";
+import { LogOut, Package, ShoppingCart, FileText, UserCog } from "lucide-react";
 import { toast } from "sonner";
-import ClientesTab from "@/components/admin/ClientesTab";
 import PlanosTab from "@/components/admin/PlanosTab";
 import PlanosAdquiridosTab from "@/components/admin/PlanosAdquiridosTab";
 import { SolicitacoesTab } from "@/components/admin/SolicitacoesTab";
@@ -66,7 +65,7 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="solicitacoes" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8">
+          <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="solicitacoes">
               <FileText className="mr-2 h-4 w-4" />
               Solicitações
@@ -74,10 +73,6 @@ const Admin = () => {
             <TabsTrigger value="traders">
               <UserCog className="mr-2 h-4 w-4" />
               Gerenciar Traders
-            </TabsTrigger>
-            <TabsTrigger value="clientes">
-              <Users className="mr-2 h-4 w-4" />
-              Clientes
             </TabsTrigger>
             <TabsTrigger value="planos">
               <Package className="mr-2 h-4 w-4" />
@@ -95,10 +90,6 @@ const Admin = () => {
 
           <TabsContent value="traders">
             <TraderManagementTab />
-          </TabsContent>
-
-          <TabsContent value="clientes">
-            <ClientesTab />
           </TabsContent>
 
           <TabsContent value="planos">
