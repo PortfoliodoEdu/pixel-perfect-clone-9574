@@ -6,21 +6,6 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { z } from "zod";
-
-const registerSchema = z.object({
-  nome: z.string().trim().min(1, "Nome é obrigatório").max(100),
-  dataNascimento: z.string().min(1, "Data de nascimento é obrigatória"),
-  telefone: z.string().trim().min(10, "Telefone deve ter no mínimo 10 dígitos").max(15),
-  email: z.string().trim().email("Email inválido").max(255),
-  cpf: z.string().trim().length(11, "CPF deve ter 11 dígitos"),
-  ruaBairro: z.string().trim().min(1, "Rua e bairro são obrigatórios").max(200),
-  numeroResidencial: z.string().trim().min(1, "Número é obrigatório").max(10),
-  cep: z.string().trim().length(8, "CEP deve ter 8 dígitos"),
-  cidade: z.string().trim().min(1, "Cidade é obrigatória").max(100),
-  estado: z.string().trim().length(2, "Estado deve ter 2 letras").toUpperCase(),
-  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
-});
 
 const Register = () => {
   const navigate = useNavigate();
@@ -44,53 +29,44 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // Validate form data
-      const validatedData = registerSchema.parse(formData);
-      
       const redirectUrl = `${window.location.origin}/`;
       
-      const { data, error } = await supabase.auth.signUp({
-        email: validatedData.email,
-        password: validatedData.password,
+      const { data: authData, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            nome: validatedData.nome,
+            nome: formData.nome,
           },
         },
       });
 
       if (error) throw error;
-      
+
       // Update profile with additional data
-      if (data.user) {
+      if (authData.user) {
         const { error: profileError } = await supabase
           .from("profiles")
           .update({
-            data_nascimento: validatedData.dataNascimento,
-            telefone: validatedData.telefone,
-            cpf: validatedData.cpf,
-            rua_bairro: validatedData.ruaBairro,
-            numero_residencial: validatedData.numeroResidencial,
-            cep: validatedData.cep,
-            cidade: validatedData.cidade,
-            estado: validatedData.estado,
+            data_nascimento: formData.dataNascimento || null,
+            telefone: formData.telefone || null,
+            cpf: formData.cpf || null,
+            rua_bairro: formData.ruaBairro || null,
+            numero_residencial: formData.numeroResidencial || null,
+            cep: formData.cep || null,
+            cidade: formData.cidade || null,
+            estado: formData.estado || null,
           })
-          .eq("id", data.user.id);
+          .eq("id", authData.user.id);
 
-        if (profileError) {
-          console.error("Error updating profile:", profileError);
-        }
+        if (profileError) throw profileError;
       }
       
       toast.success("Cadastro realizado! Você já pode fazer login.");
       navigate("/");
     } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
-      } else {
-        toast.error(error.message || "Erro ao criar conta");
-      }
+      toast.error(error.message || "Erro ao criar conta");
     } finally {
       setLoading(false);
     }
@@ -110,7 +86,10 @@ const Register = () => {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-white text-2xl font-bold">Painel do Trader</span>
-          <button className="text-white flex items-center gap-2 text-sm hover:opacity-90 transition-opacity">
+          <button 
+            onClick={() => navigate("/")}
+            className="text-white flex items-center gap-2 text-sm hover:opacity-90 transition-opacity"
+          >
             <ArrowLeft className="w-4 h-4" />
             Voltar para o site
           </button>
@@ -129,7 +108,7 @@ const Register = () => {
             </div>
 
             <form onSubmit={handleSignUp} className="space-y-6">
-              {/* Row 1: Nome completo + Data de nascimento */}
+              {/* Row 1: Nome completo & Data de nascimento */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="fullName" className="text-foreground text-base font-normal">
@@ -145,11 +124,11 @@ const Register = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="dataNascimento" className="text-foreground text-base font-normal">
+                  <Label htmlFor="birthDate" className="text-foreground text-base font-normal">
                     Data de nascimento
                   </Label>
                   <Input
-                    id="dataNascimento"
+                    id="birthDate"
                     type="date"
                     required
                     value={formData.dataNascimento}
@@ -159,20 +138,20 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Row 2: Telefone + Email + CPF */}
+              {/* Row 2: Telefone, Email & CPF */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="telefone" className="text-foreground text-base font-normal">
+                  <Label htmlFor="phone" className="text-foreground text-base font-normal">
                     Telefone
                   </Label>
                   <Input
-                    id="telefone"
+                    id="phone"
                     type="tel"
                     required
                     value={formData.telefone}
-                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value.replace(/\D/g, "") })}
+                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
                     className="h-14 text-base border-input bg-muted/50"
-                    placeholder="11999999999"
+                    placeholder="(00) 00000-0000"
                   />
                 </div>
                 <div className="space-y-2">
@@ -197,22 +176,22 @@ const Register = () => {
                     type="text"
                     required
                     value={formData.cpf}
-                    onChange={(e) => setFormData({ ...formData, cpf: e.target.value.replace(/\D/g, "") })}
+                    onChange={(e) => setFormData({ ...formData, cpf: e.target.value.replace(/\D/g, '') })}
                     className="h-14 text-base border-input bg-muted/50"
-                    placeholder="12345678901"
+                    placeholder="000.000.000-00"
                     maxLength={11}
                   />
                 </div>
               </div>
 
-              {/* Row 3: Rua e Bairro + Número */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="ruaBairro" className="text-foreground text-base font-normal">
+              {/* Row 3: Rua e Bairro & Número residencial */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="street" className="text-foreground text-base font-normal">
                     Rua e Bairro
                   </Label>
                   <Input
-                    id="ruaBairro"
+                    id="street"
                     type="text"
                     required
                     value={formData.ruaBairro}
@@ -221,11 +200,11 @@ const Register = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="numeroResidencial" className="text-foreground text-base font-normal">
+                  <Label htmlFor="number" className="text-foreground text-base font-normal">
                     Número residencial
                   </Label>
                   <Input
-                    id="numeroResidencial"
+                    id="number"
                     type="text"
                     required
                     value={formData.numeroResidencial}
@@ -235,7 +214,7 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Row 4: CEP + Cidade + Estado */}
+              {/* Row 4: CEP, Cidade & Estado */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="cep" className="text-foreground text-base font-normal">
@@ -246,18 +225,18 @@ const Register = () => {
                     type="text"
                     required
                     value={formData.cep}
-                    onChange={(e) => setFormData({ ...formData, cep: e.target.value.replace(/\D/g, "") })}
+                    onChange={(e) => setFormData({ ...formData, cep: e.target.value.replace(/\D/g, '') })}
                     className="h-14 text-base border-input bg-muted/50"
-                    placeholder="12345678"
+                    placeholder="00000-000"
                     maxLength={8}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="cidade" className="text-foreground text-base font-normal">
+                  <Label htmlFor="city" className="text-foreground text-base font-normal">
                     Cidade
                   </Label>
                   <Input
-                    id="cidade"
+                    id="city"
                     type="text"
                     required
                     value={formData.cidade}
@@ -266,11 +245,11 @@ const Register = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="estado" className="text-foreground text-base font-normal">
+                  <Label htmlFor="state" className="text-foreground text-base font-normal">
                     Estado
                   </Label>
                   <Input
-                    id="estado"
+                    id="state"
                     type="text"
                     required
                     value={formData.estado}
