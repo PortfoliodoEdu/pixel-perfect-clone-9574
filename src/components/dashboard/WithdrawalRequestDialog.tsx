@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WithdrawalRequestDialogProps {
   open: boolean;
@@ -15,14 +16,44 @@ export const WithdrawalRequestDialog = ({ open, onOpenChange, planId }: Withdraw
   const [name, setName] = useState("");
   const [cpf, setCpf] = useState("");
   const [amount, setAmount] = useState("");
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = () => {
-    toast({
-      title: "Solicitação enviada",
-      description: "Sua solicitação de saque foi enviada com sucesso.",
-    });
-    onOpenChange(false);
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { error } = await supabase
+        .from("solicitacoes")
+        .insert({
+          user_id: user.id,
+          plano_adquirido_id: planId,
+          tipo_solicitacao: "saque",
+          descricao: `Solicitação de saque - Nome: ${name}, CPF: ${cpf}, Valor: R$ ${amount}`,
+          status: "pendente"
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Solicitação enviada",
+        description: "Sua solicitação de saque foi enviada com sucesso.",
+      });
+      setName("");
+      setCpf("");
+      setAmount("");
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -66,9 +97,10 @@ export const WithdrawalRequestDialog = ({ open, onOpenChange, planId }: Withdraw
           </p>
           <Button 
             onClick={handleSubmit}
+            disabled={loading}
             className="w-full bg-[#FF4500] hover:bg-[#FF4500]/90 text-white font-bold"
           >
-            SOLICITAR SAQUE
+            {loading ? "Enviando..." : "SOLICITAR SAQUE"}
           </Button>
         </div>
       </DialogContent>

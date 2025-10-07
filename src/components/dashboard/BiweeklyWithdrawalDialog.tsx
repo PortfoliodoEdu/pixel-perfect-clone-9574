@@ -1,6 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 
 interface BiweeklyWithdrawalDialogProps {
   open: boolean;
@@ -10,13 +12,40 @@ interface BiweeklyWithdrawalDialogProps {
 
 export const BiweeklyWithdrawalDialog = ({ open, onOpenChange, planId }: BiweeklyWithdrawalDialogProps) => {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
 
-  const handleActivate = () => {
-    toast({
-      title: "Saque quinzenal ativado",
-      description: "O saque quinzenal foi ativado com sucesso.",
-    });
-    onOpenChange(false);
+  const handleActivate = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { error } = await supabase
+        .from("solicitacoes")
+        .insert({
+          user_id: user.id,
+          plano_adquirido_id: planId,
+          tipo_solicitacao: "saque_quinzenal",
+          descricao: "Solicitação para ativar saque quinzenal (taxa de R$ 237,00)",
+          status: "pendente"
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Solicitação enviada",
+        description: "Sua solicitação de saque quinzenal foi enviada com sucesso.",
+      });
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -33,9 +62,10 @@ export const BiweeklyWithdrawalDialog = ({ open, onOpenChange, planId }: Biweekl
           </p>
           <Button 
             onClick={handleActivate}
+            disabled={loading}
             className="w-full bg-[#FF4500] hover:bg-[#FF4500]/90 text-white font-bold"
           >
-            QUERO ATIVAR
+            {loading ? "Enviando..." : "QUERO ATIVAR"}
           </Button>
         </div>
       </DialogContent>

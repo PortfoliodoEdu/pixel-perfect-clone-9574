@@ -61,18 +61,46 @@ const PlanosAdquiridosTab = () => {
       if (editingPlano) {
         const { error } = await supabase
           .from("planos_adquiridos")
-          .update(formData)
+          .update({
+            plano_id: formData.plano_id,
+            status_plano: formData.status_plano,
+            tipo_saque: formData.tipo_saque
+          })
           .eq("id", editingPlano.id);
         
         if (error) throw error;
         toast.success("Plano atualizado com sucesso!");
       } else {
+        // Buscar o próximo ID de carteira sequencial para o trader
+        const { data: existingPlans } = await supabase
+          .from("planos_adquiridos")
+          .select("id_carteira")
+          .eq("cliente_id", formData.cliente_id)
+          .order("created_at", { ascending: false });
+
+        let nextId = 1;
+        if (existingPlans && existingPlans.length > 0) {
+          const lastId = existingPlans[0].id_carteira;
+          const numericPart = parseInt(lastId);
+          if (!isNaN(numericPart)) {
+            nextId = numericPart + 1;
+          }
+        }
+
+        const id_carteira = String(nextId).padStart(3, '0');
+
         const { error } = await supabase
           .from("planos_adquiridos")
-          .insert([formData]);
+          .insert([{
+            cliente_id: formData.cliente_id,
+            plano_id: formData.plano_id,
+            status_plano: formData.status_plano,
+            tipo_saque: formData.tipo_saque,
+            id_carteira
+          }]);
         
         if (error) throw error;
-        toast.success("Plano adquirido criado com sucesso!");
+        toast.success(`Plano adquirido criado com ID de carteira: ${id_carteira}`);
       }
       
       setOpen(false);
@@ -225,14 +253,17 @@ const PlanosAdquiridosTab = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>ID da Carteira</Label>
-                <Input
-                  value={formData.id_carteira}
-                  onChange={(e) => setFormData({ ...formData, id_carteira: e.target.value })}
-                  required
-                />
-              </div>
+              {editingPlano && (
+                <div>
+                  <Label>ID da Carteira</Label>
+                  <Input
+                    value={formData.id_carteira}
+                    disabled
+                    className="bg-muted"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">ID da carteira é gerado automaticamente</p>
+                </div>
+              )}
               <Button type="submit" className="w-full">Salvar</Button>
             </form>
           </DialogContent>

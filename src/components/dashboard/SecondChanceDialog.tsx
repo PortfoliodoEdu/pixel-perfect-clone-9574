@@ -1,6 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 
 interface SecondChanceDialogProps {
   open: boolean;
@@ -10,13 +12,40 @@ interface SecondChanceDialogProps {
 
 export const SecondChanceDialog = ({ open, onOpenChange, planId }: SecondChanceDialogProps) => {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
 
-  const handleRequest = () => {
-    toast({
-      title: "Segunda chance solicitada",
-      description: "Sua solicitação de segunda chance foi enviada.",
-    });
-    onOpenChange(false);
+  const handleRequest = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { error } = await supabase
+        .from("solicitacoes")
+        .insert({
+          user_id: user.id,
+          plano_adquirido_id: planId,
+          tipo_solicitacao: "segunda_chance",
+          descricao: "Solicitação de segunda chance no teste",
+          status: "pendente"
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Solicitação enviada",
+        description: "Sua solicitação de segunda chance foi enviada com sucesso.",
+      });
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -33,9 +62,10 @@ export const SecondChanceDialog = ({ open, onOpenChange, planId }: SecondChanceD
           </p>
           <Button 
             onClick={handleRequest}
+            disabled={loading}
             className="w-full bg-[#FF4500] hover:bg-[#FF4500]/90 text-white font-bold"
           >
-            QUERO SOLICITAR
+            {loading ? "Enviando..." : "QUERO SOLICITAR"}
           </Button>
         </div>
       </DialogContent>
