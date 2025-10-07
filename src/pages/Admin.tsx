@@ -22,7 +22,8 @@ const Admin = () => {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
-      navigate("/auth");
+      toast.error("Acesso não autorizado. Por favor, faça login.");
+      navigate("/");
       return;
     }
 
@@ -32,8 +33,8 @@ const Admin = () => {
       .eq("user_id", session.user.id);
 
     if (!roles || !roles.some(r => r.role === "admin")) {
-      toast.error("Acesso negado");
-      navigate("/dashboard");
+      toast.error("Acesso negado. Você não tem permissão de administrador.");
+      navigate("/");
       return;
     }
 

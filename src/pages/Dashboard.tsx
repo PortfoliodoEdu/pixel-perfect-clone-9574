@@ -45,7 +45,8 @@ const Dashboard = () => {
         if (session) {
           loadUserData(session.user.id);
         } else {
-          navigate("/auth");
+          toast.error("Sessão expirada. Por favor, faça login novamente.");
+          navigate("/");
         }
       }
     );
@@ -55,7 +56,8 @@ const Dashboard = () => {
       if (session) {
         loadUserData(session.user.id);
       } else {
-        navigate("/auth");
+        toast.error("Acesso não autorizado. Por favor, faça login.");
+        navigate("/");
       }
     });
 
