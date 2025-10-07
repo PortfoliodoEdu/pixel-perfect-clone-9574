@@ -20,15 +20,17 @@ export const BiweeklyWithdrawalDialog = ({ open, onOpenChange, planId }: Biweekl
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
+      const sanitizedData = {
+        user_id: user.id,
+        plano_adquirido_id: planId,
+        tipo_solicitacao: "saque_quinzenal",
+        descricao: "Solicitação para ativar saque quinzenal (taxa de R$ 237,00)",
+        status: "pendente"
+      };
+
       const { error } = await supabase
         .from("solicitacoes")
-        .insert({
-          user_id: user.id,
-          plano_adquirido_id: planId,
-          tipo_solicitacao: "saque_quinzenal",
-          descricao: "Solicitação para ativar saque quinzenal (taxa de R$ 237,00)",
-          status: "pendente"
-        });
+        .insert(sanitizedData);
 
       if (error) throw error;
 
@@ -40,7 +42,7 @@ export const BiweeklyWithdrawalDialog = ({ open, onOpenChange, planId }: Biweekl
     } catch (error: any) {
       toast({
         title: "Erro",
-        description: error.message,
+        description: "Ocorreu um erro ao processar sua solicitação",
         variant: "destructive"
       });
     } finally {

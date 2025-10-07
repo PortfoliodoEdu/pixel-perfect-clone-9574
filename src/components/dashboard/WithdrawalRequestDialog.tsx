@@ -19,21 +19,58 @@ export const WithdrawalRequestDialog = ({ open, onOpenChange, planId }: Withdraw
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  const validateInput = () => {
+    if (!name.trim() || name.length > 100) {
+      toast({
+        title: "Erro de validação",
+        description: "Nome inválido",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    const cpfRegex = /^\d{11}$/;
+    if (!cpfRegex.test(cpf.replace(/\D/g, ''))) {
+      toast({
+        title: "Erro de validação",
+        description: "CPF inválido",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0 || numAmount > 1000000) {
+      toast({
+        title: "Erro de validação",
+        description: "Valor inválido",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async () => {
+    if (!validateInput()) return;
+
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
+      const sanitizedData = {
+        user_id: user.id,
+        plano_adquirido_id: planId,
+        tipo_solicitacao: "saque",
+        descricao: `Solicitação de saque - Nome: ${name.trim()}, CPF: ${cpf.replace(/\D/g, '')}, Valor: R$ ${parseFloat(amount).toFixed(2)}`,
+        status: "pendente"
+      };
+
       const { error } = await supabase
         .from("solicitacoes")
-        .insert({
-          user_id: user.id,
-          plano_adquirido_id: planId,
-          tipo_solicitacao: "saque",
-          descricao: `Solicitação de saque - Nome: ${name}, CPF: ${cpf}, Valor: R$ ${amount}`,
-          status: "pendente"
-        });
+        .insert(sanitizedData);
 
       if (error) throw error;
 
@@ -48,7 +85,7 @@ export const WithdrawalRequestDialog = ({ open, onOpenChange, planId }: Withdraw
     } catch (error: any) {
       toast({
         title: "Erro",
-        description: error.message,
+        description: "Ocorreu um erro ao processar sua solicitação",
         variant: "destructive"
       });
     } finally {
