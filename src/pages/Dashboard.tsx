@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Calendar, DollarSign, FileText, CheckSquare, Pencil, Check } from "lucide-react";
@@ -7,7 +7,7 @@ import { WithdrawalRequestDialog } from "@/components/dashboard/WithdrawalReques
 import { BiweeklyWithdrawalDialog } from "@/components/dashboard/BiweeklyWithdrawalDialog";
 import { SecondChanceDialog } from "@/components/dashboard/SecondChanceDialog";
 import { CommentsDialog } from "@/components/dashboard/CommentsDialog";
-import { DocumentUpload } from "@/components/dashboard/DocumentUpload";
+
 import { ProfilePictureUpload } from "@/components/dashboard/ProfilePictureUpload";
 import { UserMenu } from "@/components/dashboard/UserMenu";
 import { PlanTimeline } from "@/components/dashboard/PlanTimeline";
@@ -44,6 +44,8 @@ const Dashboard = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [userDocuments, setUserDocuments] = useState<any[]>([]);
   const user = session?.user || null;
+  const cnhInputRef = useRef<HTMLInputElement>(null);
+  const selfieInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -157,6 +159,51 @@ const Dashboard = () => {
 
   const closeDialog = () => {
     setActiveDialog({ type: null, planId: '' });
+  };
+
+  // Upload de documentos diretamente desta seção para evitar duplicações visuais
+  const uploadDoc = async (file: File, tipo: 'cnh' | 'selfie_rg') => {
+    if (!user) return;
+
+    // Validações básicas
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Formato inválido. Use JPG, PNG, WEBP ou PDF");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Arquivo muito grande. Tamanho máximo: 10MB");
+      return;
+    }
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}/${tipo}_${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("documentos")
+        .upload(fileName, file);
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("documentos")
+        .getPublicUrl(fileName);
+
+      const { error: dbError } = await supabase
+        .from("user_documents")
+        .insert({
+          user_id: user.id,
+          tipo_documento: tipo,
+          arquivo_url: publicUrl,
+          status: "pendente",
+        });
+      if (dbError) throw dbError;
+
+      toast.success("Documento enviado com sucesso!");
+      await loadUserData(user.id);
+    } catch (error: any) {
+      toast.error("Erro ao enviar documento: " + error.message);
+    }
   };
 
   const handleSavePersonalInfo = async () => {
@@ -553,7 +600,13 @@ const Dashboard = () => {
                       <span className="text-sm text-green-600 font-medium">Enviado</span>
                     </div>
                   ) : (
-                    <span className="text-sm text-muted-foreground">Pendente</span>
+                    <button
+                      type="button"
+                      onClick={() => cnhInputRef.current?.click()}
+                      className="text-sm text-primary underline"
+                    >
+                      Anexar
+                    </button>
                   )}
                 </div>
                 <div className="flex items-center justify-between">
@@ -567,15 +620,39 @@ const Dashboard = () => {
                       <span className="text-sm text-green-600 font-medium">Enviado</span>
                     </div>
                   ) : (
-                    <span className="text-sm text-muted-foreground">Pendente</span>
+                    <button
+                      type="button"
+                      onClick={() => selfieInputRef.current?.click()}
+                      className="text-sm text-primary underline"
+                    >
+                      Anexar
+                    </button>
                   )}
                 </div>
-                {session && (
-                  <DocumentUpload
-                    userId={session.user.id}
-                    onUploadComplete={() => loadUserData(session.user.id)}
-                  />
-                )}
+                {/* Inputs de arquivo ocultos para disparar o upload */}
+                <input
+                  ref={cnhInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".jpg,.jpeg,.png,.pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadDoc(file, 'cnh');
+                    e.currentTarget.value = '';
+                  }}
+                />
+                <input
+                  ref={selfieInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".jpg,.jpeg,.png,.webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadDoc(file, 'selfie_rg');
+                    e.currentTarget.value = '';
+                  }}
+                />
+
               </div>
 
               {isEditing && (
