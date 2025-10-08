@@ -106,6 +106,9 @@ export const SolicitacoesTab = () => {
       pendente: { className: "bg-orange-500 text-white", label: "Pendente" },
       atendida: { className: "bg-green-500 text-white", label: "Atendida" },
       rejeitada: { className: "bg-red-500 text-white", label: "Rejeitada" },
+      aprovado: { className: "bg-blue-500 text-white", label: "Aprovado" },
+      efetuado: { className: "bg-emerald-500 text-white", label: "Efetuado" },
+      recusado: { className: "bg-gray-500 text-white", label: "Recusado" },
     };
 
     const config = statusMap[status] || statusMap.pendente;
@@ -391,7 +394,10 @@ export const SolicitacoesTab = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="aprovado">Aprovado</SelectItem>
+                      <SelectItem value="efetuado">Efetuado</SelectItem>
                       <SelectItem value="atendida">Atendida</SelectItem>
+                      <SelectItem value="recusado">Recusado</SelectItem>
                       <SelectItem value="rejeitada">Rejeitada</SelectItem>
                     </SelectContent>
                   </Select>
