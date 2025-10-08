@@ -27,7 +27,7 @@ export const ApprovalRequestDialog = ({
       const { error } = await supabase.from("solicitacoes").insert({
         user_id: user.id,
         plano_adquirido_id: planoId,
-        tipo_solicitacao: "aprovacao_teste",
+        tipo_solicitacao: "outro",
         descricao: "Solicitação de aprovação no teste",
       });
 

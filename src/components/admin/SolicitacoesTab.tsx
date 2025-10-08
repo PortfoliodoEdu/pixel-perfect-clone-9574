@@ -114,9 +114,9 @@ export const SolicitacoesTab = () => {
 
   const getTipoLabel = (tipo: string) => {
     const tipoMap: Record<string, string> = {
-      mudanca_saque: "Mudança de Saque",
+      saque_quinzenal: "Mudança de Saque Quinzenal",
       segunda_chance: "Segunda Chance no Teste",
-      aprovacao_teste: "Aprovação no Teste",
+      outro: "Outras Solicitações",
       saque: "Solicitação de Saque",
     };
     return tipoMap[tipo] || tipo;
@@ -221,9 +221,9 @@ export const SolicitacoesTab = () => {
         <Tabs value={filter} onValueChange={setFilter} className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="all">Todas</TabsTrigger>
-            <TabsTrigger value="mudanca_saque">Mudança de Saque</TabsTrigger>
+            <TabsTrigger value="saque_quinzenal">Mudança de Saque</TabsTrigger>
             <TabsTrigger value="segunda_chance">Segunda Chance</TabsTrigger>
-            <TabsTrigger value="aprovacao_teste">Aprovação Teste</TabsTrigger>
+            <TabsTrigger value="outro">Outras Solicitações</TabsTrigger>
             <TabsTrigger value="saque">Saque</TabsTrigger>
           </TabsList>
         </Tabs>
@@ -391,10 +391,8 @@ export const SolicitacoesTab = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pendente">Pendente</SelectItem>
-                      <SelectItem value="aprovado">Aprovado</SelectItem>
-                      <SelectItem value="efetuado">Efetuado</SelectItem>
-                      <SelectItem value="recusado">Negado - Fora do ciclo</SelectItem>
-                      <SelectItem value="negado">Negado - Sem saldo</SelectItem>
+                      <SelectItem value="atendida">Atendida</SelectItem>
+                      <SelectItem value="rejeitada">Rejeitada</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
