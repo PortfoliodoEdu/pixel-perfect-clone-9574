@@ -4,8 +4,13 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Upload } from "lucide-react";
 
 interface Solicitacao {
   id: string;
@@ -25,6 +30,13 @@ export const SolicitacoesTab = () => {
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [selectedSolicitacao, setSelectedSolicitacao] = useState<Solicitacao | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [valorFinal, setValorFinal] = useState("");
+  const [status, setStatus] = useState("pendente");
+  const [uploading, setUploading] = useState(false);
+  const [comprovanteUrl, setComprovanteUrl] = useState("");
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     loadSolicitacoes();
@@ -88,6 +100,91 @@ export const SolicitacoesTab = () => {
     return tipoMap[tipo] || tipo;
   };
 
+  const handleVisualizarClick = (solicitacao: Solicitacao) => {
+    setSelectedSolicitacao(solicitacao);
+    setValorFinal("");
+    setStatus("pendente");
+    setComprovanteUrl("");
+    setDialogOpen(true);
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `comprovantes/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documentos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('documentos')
+        .getPublicUrl(filePath);
+
+      setComprovanteUrl(publicUrl);
+      toast.success("Comprovante enviado com sucesso!");
+    } catch (error: any) {
+      toast.error("Erro ao enviar comprovante: " + error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleUpdateSolicitacao = async () => {
+    if (!selectedSolicitacao) return;
+
+    try {
+      setUpdating(true);
+
+      // Atualizar a solicitação
+      const { error: solicitacaoError } = await supabase
+        .from('solicitacoes')
+        .update({
+          status: status,
+          resposta_admin: valorFinal ? `Valor final: R$ ${valorFinal}` : null
+        })
+        .eq('id', selectedSolicitacao.id);
+
+      if (solicitacaoError) throw solicitacaoError;
+
+      // Atualizar o histórico relacionado
+      const { data: historicoData } = await supabase
+        .from('historico_observacoes')
+        .select('id')
+        .eq('solicitacao_id', selectedSolicitacao.id)
+        .single();
+
+      if (historicoData) {
+        const { error: historicoError } = await supabase
+          .from('historico_observacoes')
+          .update({
+            valor_final: valorFinal ? parseFloat(valorFinal) : null,
+            status_evento: status,
+            comprovante_url: comprovanteUrl || null
+          })
+          .eq('id', historicoData.id);
+
+        if (historicoError) throw historicoError;
+      }
+
+      toast.success("Solicitação atualizada com sucesso!");
+      setDialogOpen(false);
+      loadSolicitacoes();
+    } catch (error: any) {
+      toast.error("Erro ao atualizar solicitação: " + error.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const groupedData = groupByDate(solicitacoes);
 
   if (loading) {
@@ -143,8 +240,12 @@ export const SolicitacoesTab = () => {
                         <td className="p-4 text-sm">{item.descricao || "-"}</td>
                         <td className="p-4">{getStatusBadge(item.status)}</td>
                         <td className="p-4">
-                          <Button size="sm" variant="outline">
-                            Visualizar
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleVisualizarClick(item)}
+                          >
+                            Atualizar
                           </Button>
                         </td>
                       </tr>
@@ -156,6 +257,101 @@ export const SolicitacoesTab = () => {
           ))
         )}
       </div>
+
+      {/* Dialog para atualizar solicitação */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Atualizar Solicitação de Saque</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedSolicitacao && (
+              <>
+                <div>
+                  <Label className="text-sm font-medium">Trader</Label>
+                  <p className="text-sm">{selectedSolicitacao.profiles?.nome}</p>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Tipo</Label>
+                  <p className="text-sm">{getTipoLabel(selectedSolicitacao.tipo_solicitacao)}</p>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Valor Solicitado</Label>
+                  <Input
+                    type="text"
+                    value={selectedSolicitacao.descricao ? 
+                      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(selectedSolicitacao.descricao)) 
+                      : '-'}
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+
+                <div>
+                  <Label>Valor Final</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={valorFinal}
+                    onChange={(e) => setValorFinal(e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <Label>Status</Label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="aprovado">Aprovado</SelectItem>
+                      <SelectItem value="efetuado">Efetuado</SelectItem>
+                      <SelectItem value="recusado">Negado - Fora do ciclo</SelectItem>
+                      <SelectItem value="negado">Negado - Sem saldo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Comprovante</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="file"
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      accept=".pdf,.jpg,.jpeg,.png"
+                    />
+                    {uploading && <span className="text-sm text-muted-foreground">Enviando...</span>}
+                  </div>
+                  {comprovanteUrl && (
+                    <a 
+                      href={comprovanteUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline flex items-center gap-1 mt-2"
+                    >
+                      <Upload className="w-3 h-3" />
+                      Ver comprovante anexado
+                    </a>
+                  )}
+                </div>
+
+                <Button 
+                  onClick={handleUpdateSolicitacao} 
+                  disabled={updating}
+                  className="w-full"
+                >
+                  {updating ? 'Salvando...' : 'Salvar Atualização'}
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
