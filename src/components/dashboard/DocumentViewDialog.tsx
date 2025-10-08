@@ -96,7 +96,7 @@ export const DocumentViewDialog = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {documents.map((doc) => (
                   <div key={doc.id} className="relative bg-background rounded-md overflow-hidden border">
-                    {doc.arquivo_url.endsWith('.pdf') ? (
+                    {getPath(doc.arquivo_url).toLowerCase().endsWith('.pdf') ? (
                       <div className="p-4 flex items-center justify-between">
                         <span className="text-sm text-foreground">Arquivo PDF</span>
                         <div className="flex gap-2">
