@@ -83,12 +83,22 @@ export const TraderManagementTab = () => {
     if (!selectedTrader || !newPassword) return;
 
     try {
-      const { error } = await supabase.auth.admin.updateUserById(
-        selectedTrader.id,
-        { password: newPassword }
-      );
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('update-user-password', {
+        body: {
+          userId: selectedTrader.id,
+          newPassword: newPassword
+        }
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       await AuditLogger.logPasswordChange(selectedTrader.id);
 
@@ -96,7 +106,8 @@ export const TraderManagementTab = () => {
       setNewPassword("");
       setShowPasswordConfirm(false);
     } catch (error: any) {
-      toast.error("Ocorreu um erro ao alterar a senha");
+      console.error("Erro ao alterar senha:", error);
+      toast.error(error.message || "Ocorreu um erro ao alterar a senha");
     }
   };
 
