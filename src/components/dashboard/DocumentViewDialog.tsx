@@ -1,6 +1,6 @@
 import { FileText, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface DocumentViewDialogProps {
   tipo: 'cnh' | 'selfie_rg';
@@ -36,6 +36,9 @@ export const DocumentViewDialog = ({
         >
           {label}
         </button>
+        <span className={`text-xs ${hasDocument ? 'text-green-600' : 'text-muted-foreground'}`}>
+          {hasDocument ? 'Anexado' : 'Pendente'}
+        </span>
         {hasDocument && documentUrl && (
           <Button
             type="button"
@@ -53,6 +56,9 @@ export const DocumentViewDialog = ({
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Visualizar {label}</DialogTitle>
+            <DialogDescription>
+              {hasDocument && documentUrl ? 'Documento anexado. Você pode visualizar abaixo ou abrir em nova guia.' : 'Nenhum documento foi anexado ainda.'}
+            </DialogDescription>
           </DialogHeader>
           <div className="w-full h-[600px] flex items-center justify-center bg-muted rounded-lg overflow-hidden">
             {documentUrl ? (
