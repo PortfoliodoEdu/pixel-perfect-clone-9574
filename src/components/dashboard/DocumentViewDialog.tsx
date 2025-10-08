@@ -101,7 +101,7 @@ export const DocumentViewDialog = ({
                         <span className="text-sm text-foreground">Arquivo PDF</span>
                         <div className="flex gap-2">
                           <Button variant="ghost" size="sm" asChild>
-                            <a href={doc.arquivo_url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${label}`}>
+                            <a href={signedMap[doc.id] || doc.arquivo_url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${label}`}>
                               <Eye className="w-4 h-4" />
                             </a>
                           </Button>
@@ -113,14 +113,14 @@ export const DocumentViewDialog = ({
                     ) : (
                       <>
                         <img
-                          src={doc.arquivo_url}
+                          src={signedMap[doc.id] || doc.arquivo_url}
                           alt={label}
                           className="w-full h-64 object-contain bg-muted"
                           loading="lazy"
                         />
                         <div className="absolute top-2 right-2 flex gap-2">
                           <Button variant="ghost" size="sm" asChild>
-                            <a href={doc.arquivo_url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${label}`}>
+                            <a href={signedMap[doc.id] || doc.arquivo_url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${label}`}>
                               <Eye className="w-4 h-4" />
                             </a>
                           </Button>
