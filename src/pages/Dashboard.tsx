@@ -230,8 +230,7 @@ const Dashboard = () => {
                   Olá, <span className="text-primary">{profile?.nome || "Trader"}</span>.
                 </h2>
                 <p className="text-foreground/70 text-sm">
-                  {profile?.informacoes_personalizadas || 
-                    "Seja bem vindo ao Painel do Trader. Aqui você poderá controlar todas as funções da sua conta na nossa mesa proprietária."}
+                  Seja bem vindo ao Painel do Trader. Aqui você poderá controlar todas as funções da sua conta na nossa mesa proprietária.
                 </p>
                 <div className="flex gap-3">
                   <Button
