@@ -72,10 +72,8 @@ export const DocumentUpload = ({ userId, onUploadComplete }: DocumentUploadProps
   };
 
   return (
-    <div className="flex items-center gap-6 mt-4">
+    <div className="flex items-center gap-6">
       <label className="flex items-center gap-2 cursor-pointer text-foreground hover:text-primary transition-colors">
-        <FileText className="w-5 h-5" />
-        <span className="text-sm">Anexar CNH, RG ou CPF</span>
         <input
           type="file"
           className="hidden"
@@ -83,11 +81,10 @@ export const DocumentUpload = ({ userId, onUploadComplete }: DocumentUploadProps
           onChange={(e) => handleFileUpload(e, "cnh")}
           disabled={uploading}
         />
+        <span className="text-sm underline">Clique para anexar CNH, RG ou CPF</span>
       </label>
       
       <label className="flex items-center gap-2 cursor-pointer text-foreground hover:text-primary transition-colors">
-        <FileText className="w-5 h-5" />
-        <span className="text-sm">Anexar selfie segurando seu RG</span>
         <input
           type="file"
           className="hidden"
@@ -95,6 +92,7 @@ export const DocumentUpload = ({ userId, onUploadComplete }: DocumentUploadProps
           onChange={(e) => handleFileUpload(e, "selfie_rg")}
           disabled={uploading}
         />
+        <span className="text-sm underline">Clique para anexar selfie com RG</span>
       </label>
     </div>
   );
