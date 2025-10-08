@@ -83,17 +83,27 @@ const Dashboard = () => {
       
       // Carregar informações pessoais nos campos
       if (profileData) {
+        // Tentar parsear informações antigas se existirem
+        let infoPersonalizadas = null;
+        try {
+          if (profileData.informacoes_personalizadas) {
+            infoPersonalizadas = JSON.parse(profileData.informacoes_personalizadas);
+          }
+        } catch (e) {
+          console.error('Erro ao parsear informações personalizadas:', e);
+        }
+
         setPersonalInfo({
           nome: profileData.nome || '',
           dataNascimento: profileData.data_nascimento || '',
           telefone: profileData.telefone || '',
           email: profileData.email || '',
-          cpf: profileData.cpf || '',
-          endereco: profileData.rua_bairro || '',
-          numero: profileData.numero_residencial || '',
-          cep: profileData.cep || '',
-          cidade: profileData.cidade || '',
-          estado: profileData.estado || ''
+          cpf: profileData.cpf || infoPersonalizadas?.cpf || '',
+          endereco: profileData.rua_bairro || infoPersonalizadas?.endereco || '',
+          numero: profileData.numero_residencial || infoPersonalizadas?.numero || '',
+          cep: profileData.cep || infoPersonalizadas?.cep || '',
+          cidade: profileData.cidade || infoPersonalizadas?.cidade || '',
+          estado: profileData.estado || infoPersonalizadas?.estado || ''
         });
       }
 
