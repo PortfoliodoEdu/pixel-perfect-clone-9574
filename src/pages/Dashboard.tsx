@@ -185,20 +185,28 @@ const Dashboard = () => {
     }
 
     try {
+      console.log('Iniciando upload do documento:', tipo);
       const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}/${tipo}_${Date.now()}.${fileExt}`;
 
+      console.log('Fazendo upload para storage:', fileName);
       const { error: uploadError } = await supabase.storage
         .from("documentos")
         .upload(fileName, file);
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Erro no upload:', uploadError);
+        throw uploadError;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from("documentos")
         .getPublicUrl(fileName);
+      
+      console.log('URL pública gerada:', publicUrl);
 
       // Usar upsert para evitar erro de duplicate key
-      const { error: dbError } = await supabase
+      console.log('Salvando no banco de dados com upsert');
+      const { data, error: dbError } = await supabase
         .from("user_documents")
         .upsert({
           user_id: user.id,
@@ -206,13 +214,21 @@ const Dashboard = () => {
           arquivo_url: publicUrl,
           status: "pendente",
         }, {
-          onConflict: 'user_id,tipo_documento'
-        });
-      if (dbError) throw dbError;
-
+          onConflict: 'user_id,tipo_documento',
+          ignoreDuplicates: false
+        })
+        .select();
+      
+      if (dbError) {
+        console.error('Erro ao salvar no banco:', dbError);
+        throw dbError;
+      }
+      
+      console.log('Documento salvo com sucesso:', data);
       toast.success("Documento enviado com sucesso!");
       await loadUserData(user.id);
     } catch (error: any) {
+      console.error('Erro geral:', error);
       toast.error("Erro ao enviar documento: " + error.message);
     }
   };
