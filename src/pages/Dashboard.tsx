@@ -229,6 +229,40 @@ const Dashboard = () => {
     }
   };
 
+  const handleDeleteDocument = async (docId: string, url: string) => {
+    if (!user) return;
+
+    try {
+      // Extract file path from URL
+      const urlParts = url.split('/documentos/');
+      if (urlParts.length < 2) {
+        throw new Error("URL inválida");
+      }
+      const filePath = urlParts[1];
+
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('documentos')
+        .remove([filePath]);
+
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('user_documents')
+        .delete()
+        .eq('id', docId);
+
+      if (dbError) throw dbError;
+
+      toast.success("Documento excluído com sucesso!");
+      await loadUserData(user.id);
+    } catch (error: any) {
+      console.error('Erro ao excluir documento:', error);
+      toast.error("Erro ao excluir documento: " + error.message);
+    }
+  };
+
   const handleSavePersonalInfo = async () => {
     if (!user) return;
 
