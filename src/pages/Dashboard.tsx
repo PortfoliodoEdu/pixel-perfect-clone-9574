@@ -198,19 +198,16 @@ const Dashboard = () => {
         throw uploadError;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("documentos")
-        .getPublicUrl(fileName);
+      // NÃO usar URL pública, bucket é privado. Guardar o caminho do arquivo
+      const storagePath = fileName;
       
-      console.log('URL pública gerada:', publicUrl);
-
       // Salvar no banco de dados (permitir múltiplos por tipo)
       const { data, error: dbError } = await supabase
         .from("user_documents")
         .insert({
           user_id: user.id,
           tipo_documento: tipo,
-          arquivo_url: publicUrl,
+          arquivo_url: storagePath,
           status: "pendente",
         })
         .select();
@@ -233,12 +230,8 @@ const Dashboard = () => {
     if (!user) return;
 
     try {
-      // Extract file path from URL
-      const urlParts = url.split('/documentos/');
-      if (urlParts.length < 2) {
-        throw new Error("URL inválida");
-      }
-      const filePath = urlParts[1];
+      // Extrair caminho do arquivo do valor salvo (pode ser URL antiga ou apenas o path)
+      const filePath = url.includes('/documentos/') ? url.split('/documentos/')[1] : url;
 
       // Delete from storage
       const { error: storageError } = await supabase.storage

@@ -1,7 +1,8 @@
+import { useEffect, useState } from "react";
 import { FileText, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-
+import { supabase } from "@/integrations/supabase/client";
 interface DocumentViewDialogProps {
   tipo: 'cnh' | 'selfie_rg';
   label: string;
@@ -23,6 +24,34 @@ export const DocumentViewDialog = ({
   onUploadClick,
   onDelete
 }: DocumentViewDialogProps) => {
+  const [signedMap, setSignedMap] = useState<Record<string, string>>({});
+
+  const getPath = (value: string) =>
+    value.includes('/documentos/') ? value.split('/documentos/')[1] : value;
+  const isPdf = (value: string) => getPath(value).toLowerCase().endsWith('.pdf');
+
+  useEffect(() => {
+    if (!open || !(documents?.length)) { setSignedMap({}); return; }
+    let cancelled = false;
+    (async () => {
+      const entries = await Promise.all(
+        documents.map(async (doc) => {
+          try {
+            const path = getPath(doc.arquivo_url);
+            const { data } = await supabase.storage
+              .from('documentos')
+              .createSignedUrl(path, 60 * 30); // 30 minutos
+            return [doc.id, data?.signedUrl || doc.arquivo_url] as const;
+          } catch {
+            return [doc.id, doc.arquivo_url] as const;
+          }
+        })
+      );
+      if (!cancelled) setSignedMap(Object.fromEntries(entries));
+    })();
+    return () => { cancelled = true; };
+  }, [open, documents]);
+
   return (
     <>
       <div className="flex items-center gap-3">

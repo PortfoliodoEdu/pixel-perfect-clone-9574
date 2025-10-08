@@ -43,10 +43,8 @@ export const DocumentUpload = ({ userId, onUploadComplete }: DocumentUploadProps
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("documentos")
-        .getPublicUrl(fileName);
+      // Store ONLY the storage path (bucket is private)
+      const storagePath = fileName;
 
       // Save to database
       const { error: dbError } = await supabase
@@ -54,7 +52,7 @@ export const DocumentUpload = ({ userId, onUploadComplete }: DocumentUploadProps
         .insert({
           user_id: userId,
           tipo_documento: tipo,
-          arquivo_url: publicUrl,
+          arquivo_url: storagePath,
           status: "pendente",
         });
 
