@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, FileText, CheckSquare } from "lucide-react";
+import { Calendar, DollarSign, FileText, CheckSquare, Pencil, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { WithdrawalRequestDialog } from "@/components/dashboard/WithdrawalRequestDialog";
 import { BiweeklyWithdrawalDialog } from "@/components/dashboard/BiweeklyWithdrawalDialog";
@@ -29,6 +29,10 @@ const Dashboard = () => {
     planId: string;
   }>({ type: null, planId: '' });
   const [personalInfo, setPersonalInfo] = useState({
+    nome: '',
+    dataNascimento: '',
+    telefone: '',
+    email: '',
     cpf: '',
     endereco: '',
     numero: '',
@@ -37,6 +41,8 @@ const Dashboard = () => {
     estado: ''
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [userDocuments, setUserDocuments] = useState<any[]>([]);
   const user = session?.user || null;
 
   useEffect(() => {
@@ -74,6 +80,22 @@ const Dashboard = () => {
         .single();
 
       setProfile(profileData);
+      
+      // Carregar informações pessoais nos campos
+      if (profileData) {
+        setPersonalInfo({
+          nome: profileData.nome || '',
+          dataNascimento: profileData.data_nascimento || '',
+          telefone: profileData.telefone || '',
+          email: profileData.email || '',
+          cpf: profileData.cpf || '',
+          endereco: profileData.rua_bairro || '',
+          numero: profileData.numero_residencial || '',
+          cep: profileData.cep || '',
+          cidade: profileData.cidade || '',
+          estado: profileData.estado || ''
+        });
+      }
 
       const { data: planosData } = await supabase
         .from("planos_adquiridos")
@@ -86,6 +108,14 @@ const Dashboard = () => {
         .order("created_at", { ascending: false });
 
       setPlanosAdquiridos(planosData || []);
+      
+      // Carregar documentos do usuário
+      const { data: documentsData } = await supabase
+        .from("user_documents")
+        .select("*")
+        .eq("user_id", userId);
+      
+      setUserDocuments(documentsData || []);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -119,53 +149,62 @@ const Dashboard = () => {
     setActiveDialog({ type: null, planId: '' });
   };
 
-  const personalInfoSchema = z.object({
-    cpf: z.string().regex(/^\d{11}$/, "CPF deve conter 11 dígitos").optional().or(z.literal('')),
-    endereco: z.string().max(200, "Endereço muito longo").optional().or(z.literal('')),
-    numero: z.string().max(10, "Número muito longo").optional().or(z.literal('')),
-    cep: z.string().regex(/^\d{8}$/, "CEP deve conter 8 dígitos").optional().or(z.literal('')),
-    cidade: z.string().max(100, "Cidade muito longa").optional().or(z.literal('')),
-    estado: z.string().max(2, "Estado deve ter 2 caracteres").optional().or(z.literal(''))
-  });
-
   const handleSavePersonalInfo = async () => {
     if (!user) return;
 
+    setIsSaving(true);
     try {
-      setIsSaving(true);
-      
-      const validation = personalInfoSchema.safeParse(personalInfo);
-      if (!validation.success) {
-      toast.error(validation.error.errors[0].message);
-        return;
-      }
+      const personalInfoSchema = z.object({
+        nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
+        dataNascimento: z.string().min(1, "Data de nascimento é obrigatória"),
+        telefone: z.string().min(10, "Telefone deve ter no mínimo 10 dígitos"),
+        email: z.string().email("Email inválido"),
+        cpf: z.string()
+          .min(11, "CPF deve ter 11 dígitos")
+          .max(11, "CPF deve ter 11 dígitos")
+          .regex(/^\d+$/, "CPF deve conter apenas números"),
+        endereco: z.string().min(5, "Endereço deve ter no mínimo 5 caracteres"),
+        numero: z.string().min(1, "Número é obrigatório"),
+        cep: z.string()
+          .min(8, "CEP deve ter 8 dígitos")
+          .max(8, "CEP deve ter 8 dígitos")
+          .regex(/^\d+$/, "CEP deve conter apenas números"),
+        cidade: z.string().min(2, "Cidade deve ter no mínimo 2 caracteres"),
+        estado: z.string()
+          .length(2, "Estado deve ter 2 caracteres")
+          .regex(/^[A-Z]{2}$/, "Estado deve conter apenas letras maiúsculas"),
+      });
 
-      const sanitizedData = {
-        informacoes_personalizadas: JSON.stringify({
-          cpf: personalInfo.cpf.trim(),
-          endereco: personalInfo.endereco.trim(),
-          numero: personalInfo.numero.trim(),
-          cep: personalInfo.cep.trim(),
-          cidade: personalInfo.cidade.trim(),
-          estado: personalInfo.estado.trim().toUpperCase()
-        })
-      };
+      personalInfoSchema.parse(personalInfo);
 
       const { error } = await supabase
-        .from('profiles')
-        .update(sanitizedData)
-        .eq('id', user.id);
+        .from("profiles")
+        .update({
+          nome: personalInfo.nome,
+          data_nascimento: personalInfo.dataNascimento,
+          telefone: personalInfo.telefone,
+          email: personalInfo.email,
+          cpf: personalInfo.cpf,
+          rua_bairro: personalInfo.endereco,
+          numero_residencial: personalInfo.numero,
+          cep: personalInfo.cep,
+          cidade: personalInfo.cidade,
+          estado: personalInfo.estado,
+        })
+        .eq("id", user.id);
 
       if (error) throw error;
 
-      await AuditLogger.logProfileUpdate();
-      
-      toast.success("Informações salvas com sucesso");
-
-      loadUserData(user.id);
+      toast.success("Informações atualizadas com sucesso!");
+      setIsEditing(false);
+      await loadUserData(user.id);
     } catch (error: any) {
-      console.error('Error saving personal info:', error);
-      toast.error("Ocorreu um erro ao salvar as informações");
+      if (error.errors) {
+        const messages = error.errors.map((e: any) => e.message).join(", ");
+        toast.error(messages);
+      } else {
+        toast.error(error.message);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -367,11 +406,20 @@ const Dashboard = () => {
 
             {/* Informações cadastrais Section */}
             <div className="bg-white rounded-lg p-8 space-y-6">
-              <div>
-                <h3 className="text-3xl font-bold text-foreground mb-2">Informações cadastrais</h3>
-                <p className="text-foreground/70">
-                  Preencha todos os dados para que você não tenha nenhum problema ao solicitar um saque.
-                </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-3xl font-bold text-foreground mb-2">Informações cadastrais</h3>
+                  <p className="text-foreground/70">
+                    Preencha todos os dados para que você não tenha nenhum problema ao solicitar um saque.
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
+                  title={isEditing ? "Cancelar edição" : "Editar informações"}
+                >
+                  <Pencil className="w-5 h-5 text-foreground/70" />
+                </button>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
@@ -379,30 +427,40 @@ const Dashboard = () => {
                   <label className="text-sm text-foreground">Nome completo</label>
                   <input 
                     type="text" 
-                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
-                    defaultValue={profile?.nome}
+                    value={personalInfo.nome}
+                    onChange={(e) => setPersonalInfo({...personalInfo, nome: e.target.value})}
+                    readOnly={!isEditing}
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0 disabled:opacity-70 read-only:opacity-70"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm text-foreground">Data de nascimento</label>
                   <input 
                     type="date" 
-                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                    value={personalInfo.dataNascimento}
+                    onChange={(e) => setPersonalInfo({...personalInfo, dataNascimento: e.target.value})}
+                    readOnly={!isEditing}
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0 disabled:opacity-70 read-only:opacity-70"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm text-foreground">Telefone</label>
                   <input 
                     type="tel" 
-                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                    value={personalInfo.telefone}
+                    onChange={(e) => setPersonalInfo({...personalInfo, telefone: e.target.value})}
+                    readOnly={!isEditing}
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0 disabled:opacity-70 read-only:opacity-70"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm text-foreground">Email</label>
                   <input 
                     type="email" 
-                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
-                    defaultValue={profile?.email}
+                    value={personalInfo.email}
+                    onChange={(e) => setPersonalInfo({...personalInfo, email: e.target.value})}
+                    readOnly={!isEditing}
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0 disabled:opacity-70 read-only:opacity-70"
                   />
                 </div>
                 <div className="space-y-2">
@@ -412,7 +470,8 @@ const Dashboard = () => {
                     value={personalInfo.cpf}
                     onChange={(e) => setPersonalInfo({...personalInfo, cpf: e.target.value.replace(/\D/g, '').slice(0, 11)})}
                     placeholder="Apenas números"
-                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                    readOnly={!isEditing}
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0 disabled:opacity-70 read-only:opacity-70"
                   />
                 </div>
                 <div className="space-y-2">
@@ -421,7 +480,8 @@ const Dashboard = () => {
                     type="text" 
                     value={personalInfo.endereco}
                     onChange={(e) => setPersonalInfo({...personalInfo, endereco: e.target.value})}
-                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                    readOnly={!isEditing}
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0 disabled:opacity-70 read-only:opacity-70"
                   />
                 </div>
                 <div className="space-y-2">
@@ -430,7 +490,8 @@ const Dashboard = () => {
                     type="text" 
                     value={personalInfo.numero}
                     onChange={(e) => setPersonalInfo({...personalInfo, numero: e.target.value})}
-                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                    readOnly={!isEditing}
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0 disabled:opacity-70 read-only:opacity-70"
                   />
                 </div>
                 <div className="space-y-2">
@@ -440,7 +501,8 @@ const Dashboard = () => {
                     value={personalInfo.cep}
                     onChange={(e) => setPersonalInfo({...personalInfo, cep: e.target.value.replace(/\D/g, '').slice(0, 8)})}
                     placeholder="Apenas números"
-                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                    readOnly={!isEditing}
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0 disabled:opacity-70 read-only:opacity-70"
                   />
                 </div>
                 <div className="space-y-2">
@@ -449,7 +511,8 @@ const Dashboard = () => {
                     type="text" 
                     value={personalInfo.cidade}
                     onChange={(e) => setPersonalInfo({...personalInfo, cidade: e.target.value})}
-                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                    readOnly={!isEditing}
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0 disabled:opacity-70 read-only:opacity-70"
                   />
                 </div>
                 <div className="space-y-2">
@@ -460,31 +523,56 @@ const Dashboard = () => {
                     onChange={(e) => setPersonalInfo({...personalInfo, estado: e.target.value.toUpperCase().slice(0, 2)})}
                     placeholder="Ex: SP"
                     maxLength={2}
-                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0"
+                    readOnly={!isEditing}
+                    className="w-full px-4 py-3 rounded-lg bg-muted/30 border-0 disabled:opacity-70 read-only:opacity-70"
                   />
                 </div>
               </div>
 
-              {/* Document Upload Buttons */}
-              {session && (
-                <DocumentUpload
-                  userId={session.user.id}
-                  onUploadComplete={() => loadUserData(session.user.id)}
-                />
-              )}
-
-              <div className="pt-4">
-                <p className="text-sm text-foreground/70 mb-4">
-                  Ao salvar, você está de acordo com o nosso regulamento atual. Vale lembrar que qualquer saque é efetuado apenas para chave PIX cadastrada no CPF do trader.
-                </p>
-                <Button 
-                  onClick={handleSavePersonalInfo}
-                  disabled={isSaving}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-12 py-3"
-                >
-                  {isSaving ? "SALVANDO..." : "SALVAR"}
-                </Button>
+              {/* Document Upload Status */}
+              <div className="space-y-3 pt-4 border-t">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-foreground/70" />
+                  <span className="text-sm text-foreground">Anexar CNH, RG ou CPF</span>
+                  {userDocuments.some(doc => doc.tipo_documento === 'cnh') && (
+                    <div className="flex items-center gap-2 ml-auto">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-green-600 font-medium">Enviado</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-foreground/70" />
+                  <span className="text-sm text-foreground">Anexar selfie segurando seu RG</span>
+                  {userDocuments.some(doc => doc.tipo_documento === 'selfie_rg') && (
+                    <div className="flex items-center gap-2 ml-auto">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-green-600 font-medium">Enviado</span>
+                    </div>
+                  )}
+                </div>
+                {session && (
+                  <DocumentUpload
+                    userId={session.user.id}
+                    onUploadComplete={() => loadUserData(session.user.id)}
+                  />
+                )}
               </div>
+
+              {isEditing && (
+                <div className="pt-4">
+                  <p className="text-sm text-foreground/70 mb-4">
+                    Ao salvar, você está de acordo com o nosso regulamento atual. Vale lembrar que qualquer saque é efetuado apenas para chave PIX cadastrada no CPF do trader.
+                  </p>
+                  <Button 
+                    onClick={handleSavePersonalInfo}
+                    disabled={isSaving}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-12 py-3"
+                  >
+                    {isSaving ? "SALVANDO..." : "SALVAR ALTERAÇÕES"}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Status Legend */}
