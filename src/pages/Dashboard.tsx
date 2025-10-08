@@ -233,11 +233,12 @@ const Dashboard = () => {
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header with gradient */}
       <header className="gradient-header px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img src={logoImage} alt="Prime Capital" className="w-12 h-12 rounded-lg" />
-          <h1 className="text-white text-2xl font-light">
-            prime<span className="font-light italic">capital</span>
-          </h1>
+        <div className="flex items-center">
+          <img 
+            src={logoImage} 
+            alt="Prime Capital" 
+            className="h-20 w-auto object-contain"
+          />
         </div>
         <div className="flex items-center gap-3">
           <span className="text-white text-xl font-bold">
