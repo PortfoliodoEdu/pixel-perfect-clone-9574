@@ -50,8 +50,8 @@ const PlanosAdquiridosTab = () => {
         profiles:cliente_id(nome, email),
         planos:plano_id(nome_plano)
       `).order("created_at", { ascending: false }),
-      supabase.from("profiles").select("*"),
-      supabase.from("planos").select("*"),
+      supabase.from("profiles").select("*").order("nome"),
+      supabase.from("planos").select("*").order("nome_plano"),
     ]);
     
     if (pa) setPlanosAdquiridos(pa);
@@ -61,6 +61,17 @@ const PlanosAdquiridosTab = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validar campos obrigatórios
+    if (!formData.cliente_id) {
+      toast.error("Selecione um cliente");
+      return;
+    }
+    
+    if (!formData.plano_id) {
+      toast.error("Selecione um plano");
+      return;
+    }
     
     try {
       if (editingPlano) {
@@ -111,6 +122,7 @@ const PlanosAdquiridosTab = () => {
       setOpen(false);
       setFormData({ cliente_id: "", plano_id: "", status_plano: "ativo", tipo_saque: "mensal", id_carteira: "" });
       setEditingPlano(null);
+      setClienteOpen(false);
       loadData();
     } catch (error: any) {
       toast.error(error.message);
@@ -176,9 +188,20 @@ const PlanosAdquiridosTab = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Gerenciar Planos Adquiridos</h2>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(isOpen) => {
+          setOpen(isOpen);
+          if (!isOpen) {
+            setFormData({ cliente_id: "", plano_id: "", status_plano: "ativo", tipo_saque: "mensal", id_carteira: "" });
+            setEditingPlano(null);
+            setClienteOpen(false);
+          }
+        }}>
           <DialogTrigger asChild>
-            <Button onClick={() => { setEditingPlano(null); setFormData({ cliente_id: "", plano_id: "", status_plano: "ativo", tipo_saque: "mensal", id_carteira: "" }); }}>
+            <Button onClick={() => { 
+              setEditingPlano(null); 
+              setFormData({ cliente_id: "", plano_id: "", status_plano: "ativo", tipo_saque: "mensal", id_carteira: "" });
+              setClienteOpen(false);
+            }}>
               <Plus className="mr-2 h-4 w-4" />
               Atribuir Plano
             </Button>
