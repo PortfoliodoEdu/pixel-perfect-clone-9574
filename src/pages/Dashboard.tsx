@@ -326,29 +326,42 @@ const Dashboard = () => {
             <div className="bg-white rounded-lg p-8 space-y-6">
               <h3 className="text-3xl font-bold text-foreground">Status da plataforma</h3>
               <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-destructive"></div>
-                <span className="text-foreground">A plataforma não está ativa</span>
+                <div className={`w-3 h-3 rounded-full ${profile?.pagamento_ativo ? 'bg-green-500' : 'bg-destructive'}`}></div>
+                <span className="text-foreground">
+                  {profile?.pagamento_ativo ? 'A plataforma está ativa' : 'A plataforma não está ativa'}
+                </span>
               </div>
-              <div className="flex gap-3">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8">
-                  ATIVAR PROFIT ONE
-                </Button>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8">
-                  ATIVAR PROFIT PRO
-                </Button>
-                <Button className="bg-foreground hover:bg-foreground/90 text-white font-bold px-8">
-                  DESATIVAR PLANO
-                </Button>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4 text-center">
-                <div>
-                  <p className="text-2xl font-bold text-foreground">R$ 90,00 por mês</p>
-                  <p className="text-sm text-foreground/70">Primeiro mês grátis para novos usuários</p>
+              {profile?.pagamento_ativo && (
+                <>
+                  <div className="flex gap-3">
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8">
+                      ATIVAR PROFIT ONE
+                    </Button>
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8">
+                      ATIVAR PROFIT PRO
+                    </Button>
+                    <Button className="bg-foreground hover:bg-foreground/90 text-white font-bold px-8">
+                      DESATIVAR PLANO
+                    </Button>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4 text-center">
+                    <div>
+                      <p className="text-2xl font-bold text-foreground">R$ 90,00 por mês</p>
+                      <p className="text-sm text-foreground/70">Primeiro mês grátis para novos usuários</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-foreground">R$ 220,00 por mês</p>
+                    </div>
+                  </div>
+                </>
+              )}
+              {!profile?.pagamento_ativo && (
+                <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                  <p className="text-sm text-destructive font-medium">
+                    Seu acesso à plataforma foi desativado. Entre em contato com o suporte para mais informações.
+                  </p>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">R$ 220,00 por mês</p>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Informações cadastrais Section */}
