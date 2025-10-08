@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, FileText, CheckSquare, Pencil, Check } from "lucide-react";
+import { Pencil, Check, FileText } from "lucide-react";
+import iconsRecomecar from "@/assets/icons-recomecar.png";
+import iconsSaque from "@/assets/icons-saque.png";
+import iconsComentarios from "@/assets/icons-comentarios.png";
+import iconsSolicitarAprovacao from "@/assets/icons-solicitar-aprovacao.png";
 import { Badge } from "@/components/ui/badge";
 import { WithdrawalRequestDialog } from "@/components/dashboard/WithdrawalRequestDialog";
 import { BiweeklyWithdrawalDialog } from "@/components/dashboard/BiweeklyWithdrawalDialog";
@@ -408,32 +412,32 @@ const Dashboard = () => {
                         {/* Solicitações - Action Buttons */}
                         <div className="flex gap-2 justify-end">
                           <button 
-                            onClick={() => openDialog('biweekly', plano.id)}
+                            onClick={() => openDialog('secondChance', plano.id)}
                             className="w-10 h-10 border border-border rounded flex items-center justify-center hover:bg-white transition-colors bg-white"
-                            title="Saque quinzenal"
+                            title="Segunda chance"
                           >
-                            <Calendar className="w-5 h-5" />
+                            <img src={iconsRecomecar} alt="Recomeçar" className="w-5 h-5" />
                           </button>
                           <button 
                             onClick={() => openDialog('withdrawal', plano.id)}
                             className="w-10 h-10 border border-border rounded flex items-center justify-center hover:bg-white transition-colors bg-white"
-                            title="Saque mensal"
+                            title="Solicitação de saque"
                           >
-                            <DollarSign className="w-5 h-5" />
+                            <img src={iconsSaque} alt="Saque" className="w-5 h-5" />
                           </button>
                           <button 
                             onClick={() => openDialog('comments', plano.id)}
                             className="w-10 h-10 border border-border rounded flex items-center justify-center hover:bg-white transition-colors bg-white"
                             title="Comentários"
                           >
-                            <FileText className="w-5 h-5" />
+                            <img src={iconsComentarios} alt="Comentários" className="w-5 h-5" />
                           </button>
                           <button 
-                            onClick={() => openDialog('secondChance', plano.id)}
+                            onClick={() => openDialog('biweekly', plano.id)}
                             className="w-10 h-10 border border-border rounded flex items-center justify-center hover:bg-white transition-colors bg-white"
-                            title="Segunda chance"
+                            title="Solicitar aprovação"
                           >
-                            <CheckSquare className="w-5 h-5" />
+                            <img src={iconsSolicitarAprovacao} alt="Solicitar aprovação" className="w-5 h-5" />
                           </button>
                         </div>
                       </div>
