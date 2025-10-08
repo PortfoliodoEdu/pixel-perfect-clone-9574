@@ -326,7 +326,9 @@ const Dashboard = () => {
             <div className="bg-white rounded-lg p-8 space-y-6">
               <h3 className="text-3xl font-bold text-foreground">Status da plataforma</h3>
               <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${profile?.pagamento_ativo ? 'bg-green-500' : 'bg-destructive'}`}></div>
+                <span className="text-2xl">
+                  {profile?.pagamento_ativo ? '🟩' : '🟥'}
+                </span>
                 <span className="text-foreground">
                   {profile?.pagamento_ativo ? 'A plataforma está ativa' : 'A plataforma não está ativa'}
                 </span>

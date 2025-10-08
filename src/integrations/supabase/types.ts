@@ -163,6 +163,7 @@ export type Database = {
           numero_residencial: string | null
           pagamento_ativo: boolean | null
           rua_bairro: string | null
+          status_plataforma: string | null
           telefone: string | null
           updated_at: string | null
         }
@@ -182,6 +183,7 @@ export type Database = {
           numero_residencial?: string | null
           pagamento_ativo?: boolean | null
           rua_bairro?: string | null
+          status_plataforma?: string | null
           telefone?: string | null
           updated_at?: string | null
         }
@@ -201,6 +203,7 @@ export type Database = {
           numero_residencial?: string | null
           pagamento_ativo?: boolean | null
           rua_bairro?: string | null
+          status_plataforma?: string | null
           telefone?: string | null
           updated_at?: string | null
         }
