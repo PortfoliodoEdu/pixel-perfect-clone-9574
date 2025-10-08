@@ -164,7 +164,7 @@ const Index = () => {
 
                 <div className="text-center">
                   <a
-                    href="https://wa.me/5511999999999"
+                    href="https://wa.me/5512987072587"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-foreground/70 hover:text-foreground transition-colors text-sm inline-block"

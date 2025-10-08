@@ -158,7 +158,7 @@ const Dashboard = () => {
   };
 
   const handleContatarSuporte = () => {
-    window.open("https://wa.me/", "_blank");
+    window.open("https://wa.me/5512987072587", "_blank");
   };
 
   const openDialog = (type: 'withdrawal' | 'biweekly' | 'secondChance' | 'comments' | 'approval', planId: string) => {
@@ -204,18 +204,14 @@ const Dashboard = () => {
       
       console.log('URL pública gerada:', publicUrl);
 
-      // Usar upsert para evitar erro de duplicate key
-      console.log('Salvando no banco de dados com upsert');
+      // Salvar no banco de dados (permitir múltiplos por tipo)
       const { data, error: dbError } = await supabase
         .from("user_documents")
-        .upsert({
+        .insert({
           user_id: user.id,
           tipo_documento: tipo,
           arquivo_url: publicUrl,
           status: "pendente",
-        }, {
-          onConflict: 'user_id,tipo_documento',
-          ignoreDuplicates: false
         })
         .select();
       
@@ -655,41 +651,57 @@ const Dashboard = () => {
                   tipo="cnh"
                   label="CNH, RG ou CPF"
                   hasDocument={userDocuments.some(doc => doc.tipo_documento === 'cnh')}
-                  documentUrl={userDocuments.find(doc => doc.tipo_documento === 'cnh')?.arquivo_url}
+                  documents={userDocuments.filter(doc => doc.tipo_documento === 'cnh')}
                   open={cnhViewOpen}
                   onOpenChange={setCnhViewOpen}
                   onUploadClick={() => cnhInputRef.current?.click()}
+                  onDelete={handleDeleteDocument}
                 />
                 <DocumentViewDialog
                   tipo="selfie_rg"
                   label="Selfie segurando RG"
                   hasDocument={userDocuments.some(doc => doc.tipo_documento === 'selfie_rg')}
-                  documentUrl={userDocuments.find(doc => doc.tipo_documento === 'selfie_rg')?.arquivo_url}
+                  documents={userDocuments.filter(doc => doc.tipo_documento === 'selfie_rg')}
                   open={selfieViewOpen}
                   onOpenChange={setSelfieViewOpen}
                   onUploadClick={() => selfieInputRef.current?.click()}
+                  onDelete={handleDeleteDocument}
                 />
                 {/* Inputs de arquivo ocultos para disparar o upload */}
                 <input
                   ref={cnhInputRef}
                   type="file"
                   className="hidden"
+                  multiple
                   accept=".jpg,.jpeg,.png,.pdf"
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) uploadDoc(file, 'cnh');
-                    e.currentTarget.value = '';
+                    const files = e.target.files;
+                    (async () => {
+                      if (files && files.length) {
+                        for (const file of Array.from(files)) {
+                          await uploadDoc(file, 'cnh');
+                        }
+                      }
+                      e.currentTarget.value = '';
+                    })();
                   }}
                 />
                 <input
                   ref={selfieInputRef}
                   type="file"
                   className="hidden"
+                  multiple
                   accept=".jpg,.jpeg,.png,.webp"
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) uploadDoc(file, 'selfie_rg');
-                    e.currentTarget.value = '';
+                    const files = e.target.files;
+                    (async () => {
+                      if (files && files.length) {
+                        for (const file of Array.from(files)) {
+                          await uploadDoc(file, 'selfie_rg');
+                        }
+                      }
+                      e.currentTarget.value = '';
+                    })();
                   }}
                 />
 

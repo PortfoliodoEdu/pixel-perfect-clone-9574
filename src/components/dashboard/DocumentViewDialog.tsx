@@ -6,20 +6,22 @@ interface DocumentViewDialogProps {
   tipo: 'cnh' | 'selfie_rg';
   label: string;
   hasDocument: boolean;
-  documentUrl?: string;
+  documents: { id: string; arquivo_url: string }[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUploadClick: () => void;
+  onDelete: (docId: string, url: string) => void;
 }
 
 export const DocumentViewDialog = ({ 
   tipo, 
   label, 
   hasDocument, 
-  documentUrl,
+  documents,
   open,
   onOpenChange,
-  onUploadClick 
+  onUploadClick,
+  onDelete
 }: DocumentViewDialogProps) => {
   return (
     <>
@@ -39,7 +41,7 @@ export const DocumentViewDialog = ({
         <span className={`text-xs ${hasDocument ? 'text-green-600' : 'text-muted-foreground'}`}>
           {hasDocument ? 'Anexado' : 'Pendente'}
         </span>
-        {hasDocument && documentUrl && (
+        {hasDocument && documents?.length > 0 && (
           <Button
             type="button"
             variant="ghost"
@@ -57,24 +59,51 @@ export const DocumentViewDialog = ({
           <DialogHeader>
             <DialogTitle>Visualizar {label}</DialogTitle>
             <DialogDescription>
-              {hasDocument && documentUrl ? 'Documento anexado. Você pode visualizar abaixo ou abrir em nova guia.' : 'Nenhum documento foi anexado ainda.'}
+              {hasDocument && (documents?.length ?? 0) > 0 ? 'Documento(s) anexado(s). Você pode visualizar abaixo ou abrir em nova guia.' : 'Nenhum documento foi anexado ainda.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="w-full h-[600px] flex items-center justify-center bg-muted rounded-lg overflow-hidden">
-            {documentUrl ? (
-              documentUrl.endsWith('.pdf') ? (
-                <iframe
-                  src={documentUrl}
-                  className="w-full h-full"
-                  title={label}
-                />
-              ) : (
-                <img
-                  src={documentUrl}
-                  alt={label}
-                  className="max-w-full max-h-full object-contain"
-                />
-              )
+          <div className="w-full max-h-[600px] overflow-auto bg-muted rounded-lg p-4">
+            {documents && documents.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {documents.map((doc) => (
+                  <div key={doc.id} className="relative bg-background rounded-md overflow-hidden border">
+                    {doc.arquivo_url.endsWith('.pdf') ? (
+                      <div className="p-4 flex items-center justify-between">
+                        <span className="text-sm text-foreground">Arquivo PDF</span>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" asChild>
+                            <a href={doc.arquivo_url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${label}`}>
+                              <Eye className="w-4 h-4" />
+                            </a>
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => onDelete(doc.id, doc.arquivo_url)}>
+                            Excluir
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <img
+                          src={doc.arquivo_url}
+                          alt={label}
+                          className="w-full h-64 object-contain bg-muted"
+                          loading="lazy"
+                        />
+                        <div className="absolute top-2 right-2 flex gap-2">
+                          <Button variant="ghost" size="sm" asChild>
+                            <a href={doc.arquivo_url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${label}`}>
+                              <Eye className="w-4 h-4" />
+                            </a>
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => onDelete(doc.id, doc.arquivo_url)}>
+                            Excluir
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
             ) : (
               <p className="text-muted-foreground">Nenhum documento disponível</p>
             )}

@@ -12,8 +12,6 @@ import { Textarea } from "@/components/ui/textarea";
 
 const SuperAdmin = () => {
   const [loading, setLoading] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
-  const [masterKey, setMasterKey] = useState("");
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [newAdminPassword, setNewAdminPassword] = useState("");
   const [logs, setLogs] = useState<any[]>([]);
@@ -25,7 +23,7 @@ const SuperAdmin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const MASTER_KEY = "PRIME_CAPITAL_SUPER_ADMIN_2025"; // Em produção, isso deve vir de variável de ambiente
+  
 
   useEffect(() => {
     checkAdminAccess();
@@ -68,22 +66,6 @@ const SuperAdmin = () => {
     }
   };
 
-  const handleMasterKeySubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (masterKey === MASTER_KEY) {
-      setAuthenticated(true);
-      toast({
-        title: "Acesso concedido",
-        description: "Bem-vindo ao painel super admin"
-      });
-    } else {
-      toast({
-        title: "Chave incorreta",
-        description: "Chave mestra inválida",
-        variant: "destructive"
-      });
-    }
-  };
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,41 +175,6 @@ const SuperAdmin = () => {
     );
   }
 
-  if (!authenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary" />
-              Área Super Restrita
-            </CardTitle>
-            <CardDescription>
-              Digite a chave mestra para acessar o painel de controle
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleMasterKeySubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="masterKey">Chave Mestra</Label>
-                <Input
-                  id="masterKey"
-                  type="password"
-                  value={masterKey}
-                  onChange={(e) => setMasterKey(e.target.value)}
-                  placeholder="Digite a chave mestra"
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full">
-                Acessar
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
