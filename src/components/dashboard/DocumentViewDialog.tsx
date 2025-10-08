@@ -55,18 +55,22 @@ export const DocumentViewDialog = ({
             <DialogTitle>Visualizar {label}</DialogTitle>
           </DialogHeader>
           <div className="w-full h-[600px] flex items-center justify-center bg-muted rounded-lg overflow-hidden">
-            {documentUrl?.endsWith('.pdf') ? (
-              <iframe
-                src={documentUrl}
-                className="w-full h-full"
-                title={label}
-              />
+            {documentUrl ? (
+              documentUrl.endsWith('.pdf') ? (
+                <iframe
+                  src={documentUrl}
+                  className="w-full h-full"
+                  title={label}
+                />
+              ) : (
+                <img
+                  src={documentUrl}
+                  alt={label}
+                  className="max-w-full max-h-full object-contain"
+                />
+              )
             ) : (
-              <img
-                src={documentUrl}
-                alt={label}
-                className="max-w-full max-h-full object-contain"
-              />
+              <p className="text-muted-foreground">Nenhum documento disponível</p>
             )}
           </div>
         </DialogContent>

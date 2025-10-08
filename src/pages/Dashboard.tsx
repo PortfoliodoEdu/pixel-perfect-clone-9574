@@ -197,13 +197,16 @@ const Dashboard = () => {
         .from("documentos")
         .getPublicUrl(fileName);
 
+      // Usar upsert para evitar erro de duplicate key
       const { error: dbError } = await supabase
         .from("user_documents")
-        .insert({
+        .upsert({
           user_id: user.id,
           tipo_documento: tipo,
           arquivo_url: publicUrl,
           status: "pendente",
+        }, {
+          onConflict: 'user_id,tipo_documento'
         });
       if (dbError) throw dbError;
 

@@ -163,12 +163,14 @@ const Index = () => {
                 </Button>
 
                 <div className="text-center">
-                  <button
-                    type="button"
-                    className="text-foreground/70 hover:text-foreground transition-colors text-sm"
+                  <a
+                    href="https://wa.me/5511999999999"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground/70 hover:text-foreground transition-colors text-sm inline-block"
                   >
                     Está com problemas?<br />Clique aqui
-                  </button>
+                  </a>
                 </div>
               </form>
             </div>
