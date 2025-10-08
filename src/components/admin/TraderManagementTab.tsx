@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AuditLogger } from "@/lib/auditLogger";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -24,6 +25,9 @@ export const TraderManagementTab = () => {
   const [newPassword, setNewPassword] = useState("");
   const [comment, setComment] = useState("");
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     loadTraders();
@@ -138,13 +142,42 @@ export const TraderManagementTab = () => {
     return <div className="p-8">Carregando traders...</div>;
   }
 
+  // Filter traders based on search query
+  const filteredTraders = traders.filter((trader) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      trader.nome.toLowerCase().includes(query) ||
+      trader.email.toLowerCase().includes(query)
+    );
+  });
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredTraders.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTraders = filteredTraders.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   return (
     <div className="grid grid-cols-3 gap-6">
       {/* Traders List */}
       <div className="col-span-1 bg-white rounded-lg p-6 space-y-4">
         <h3 className="text-lg font-bold">Traders</h3>
-        <div className="space-y-2 max-h-[600px] overflow-y-auto">
-          {traders.map((trader) => (
+        
+        {/* Search Bar */}
+        <Input
+          placeholder="Buscar por nome ou email..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full"
+        />
+
+        {/* Traders List */}
+        <div className="space-y-2 min-h-[400px]">
+          {paginatedTraders.map((trader) => (
             <div
               key={trader.id}
               onClick={() => setSelectedTrader(trader)}
@@ -159,6 +192,35 @@ export const TraderManagementTab = () => {
             </div>
           ))}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 pt-4 border-t">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="h-9 w-9"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <span className="text-sm text-muted-foreground px-2">
+              Página {currentPage} de {totalPages}
+            </span>
+            
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="h-9 w-9"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Trader Details */}

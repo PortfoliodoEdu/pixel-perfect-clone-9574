@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Pencil, Check, Eye } from "lucide-react";
+import { Pencil, Check, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { DocumentViewDialog } from "@/components/dashboard/DocumentViewDialog";
 import iconsRecomecar from "@/assets/icons-recomecar.png";
 import iconsSaque from "@/assets/icons-saque.png";
@@ -51,6 +51,8 @@ const Dashboard = () => {
   const [userDocuments, setUserDocuments] = useState<any[]>([]);
   const [cnhViewOpen, setCnhViewOpen] = useState(false);
   const [selfieViewOpen, setSelfieViewOpen] = useState(false);
+  const [planosCurrentPage, setPlanosCurrentPage] = useState(1);
+  const planosPerPage = 5;
   const user = session?.user || null;
   const cnhInputRef = useRef<HTMLInputElement>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
@@ -422,7 +424,9 @@ const Dashboard = () => {
                 </div>
 
                 {/* Cards */}
-                {planosAdquiridos.map((plano) => (
+                {planosAdquiridos
+                  .slice((planosCurrentPage - 1) * planosPerPage, planosCurrentPage * planosPerPage)
+                  .map((plano) => (
                   <div key={plano.id} className="space-y-3">
                     {/* Main Card */}
                     <div className="bg-gray-100 rounded-lg p-6">
@@ -500,6 +504,35 @@ const Dashboard = () => {
                     </div>
                   </div>
                 ))}
+
+                {/* Pagination Controls */}
+                {planosAdquiridos.length > planosPerPage && (
+                  <div className="flex items-center justify-center gap-3 pt-6">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setPlanosCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={planosCurrentPage === 1}
+                      className="h-10 w-10"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    
+                    <span className="text-sm text-muted-foreground px-3">
+                      Página {planosCurrentPage} de {Math.ceil(planosAdquiridos.length / planosPerPage)}
+                    </span>
+                    
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setPlanosCurrentPage((prev) => Math.min(Math.ceil(planosAdquiridos.length / planosPerPage), prev + 1))}
+                      disabled={planosCurrentPage === Math.ceil(planosAdquiridos.length / planosPerPage)}
+                      className="h-10 w-10"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </div>
+                )}
               </>
             )}
 
