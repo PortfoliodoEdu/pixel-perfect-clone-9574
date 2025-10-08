@@ -373,79 +373,79 @@ const Dashboard = () => {
 
                 {/* Cards */}
                 {planosAdquiridos.map((plano) => (
-                  <div key={plano.id} className="bg-gray-100 rounded-lg p-6 space-y-4">
-                    {/* Main Row */}
-                    <div className="grid grid-cols-5 gap-6 items-center">
-                      {/* ID da Carteira */}
-                      <div className="text-foreground font-semibold text-lg">
-                        {plano.id_carteira}
-                      </div>
+                  <div key={plano.id} className="space-y-3">
+                    {/* Main Card */}
+                    <div className="bg-gray-100 rounded-lg p-6">
+                      <div className="grid grid-cols-5 gap-6 items-center">
+                        {/* ID da Carteira */}
+                        <div className="text-foreground font-semibold text-lg">
+                          {plano.id_carteira}
+                        </div>
 
-                      {/* Tipo de plano */}
-                      <div className="text-foreground font-medium">
-                        {plano.planos?.nome_plano || '-'}
-                      </div>
+                        {/* Tipo de plano */}
+                        <div className="text-foreground font-medium">
+                          {plano.planos?.nome_plano || '-'}
+                        </div>
 
-                      {/* Status do Plano */}
-                      <div>
-                        {getStatusBadge(plano.status_plano)}
-                      </div>
+                        {/* Status do Plano */}
+                        <div>
+                          {getStatusBadge(plano.status_plano)}
+                        </div>
 
-                      {/* Saque */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-foreground font-medium">
-                          {plano.tipo_saque === 'mensal' ? 'Mensal' : 'Quinzenal'}
-                        </span>
-                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-white border border-border text-foreground font-bold text-sm">
-                          {plano.tipo_saque === 'mensal' ? '30' : '15'}
-                        </span>
-                        <span className="text-foreground/50 text-xs">
-                          mudar para {plano.tipo_saque === 'mensal' ? 'quinzenal' : 'mensal'}
-                        </span>
-                      </div>
+                        {/* Saque */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-foreground font-medium">
+                            {plano.tipo_saque === 'mensal' ? 'Mensal' : 'Quinzenal'}
+                          </span>
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-white border border-border text-foreground font-bold text-sm">
+                            {plano.tipo_saque === 'mensal' ? '30' : '15'}
+                          </span>
+                          <span className="text-foreground/50 text-xs">
+                            mudar para {plano.tipo_saque === 'mensal' ? 'quinzenal' : 'mensal'}
+                          </span>
+                        </div>
 
-                      {/* Solicitações - Action Buttons */}
-                      <div className="flex gap-2 justify-end">
-                        <button 
-                          onClick={() => openDialog('biweekly', plano.id)}
-                          className="w-10 h-10 border border-border rounded flex items-center justify-center hover:bg-white transition-colors bg-white"
-                          title="Saque quinzenal"
-                        >
-                          <Calendar className="w-5 h-5" />
-                        </button>
-                        <button 
-                          onClick={() => openDialog('withdrawal', plano.id)}
-                          className="w-10 h-10 border border-border rounded flex items-center justify-center hover:bg-white transition-colors bg-white"
-                          title="Saque mensal"
-                        >
-                          <DollarSign className="w-5 h-5" />
-                        </button>
-                        <button 
-                          onClick={() => openDialog('comments', plano.id)}
-                          className="w-10 h-10 border border-border rounded flex items-center justify-center hover:bg-white transition-colors bg-white"
-                          title="Comentários"
-                        >
-                          <FileText className="w-5 h-5" />
-                        </button>
-                        <button 
-                          onClick={() => openDialog('secondChance', plano.id)}
-                          className="w-10 h-10 border border-border rounded flex items-center justify-center hover:bg-white transition-colors bg-white"
-                          title="Segunda chance"
-                        >
-                          <CheckSquare className="w-5 h-5" />
-                        </button>
+                        {/* Solicitações - Action Buttons */}
+                        <div className="flex gap-2 justify-end">
+                          <button 
+                            onClick={() => openDialog('biweekly', plano.id)}
+                            className="w-10 h-10 border border-border rounded flex items-center justify-center hover:bg-white transition-colors bg-white"
+                            title="Saque quinzenal"
+                          >
+                            <Calendar className="w-5 h-5" />
+                          </button>
+                          <button 
+                            onClick={() => openDialog('withdrawal', plano.id)}
+                            className="w-10 h-10 border border-border rounded flex items-center justify-center hover:bg-white transition-colors bg-white"
+                            title="Saque mensal"
+                          >
+                            <DollarSign className="w-5 h-5" />
+                          </button>
+                          <button 
+                            onClick={() => openDialog('comments', plano.id)}
+                            className="w-10 h-10 border border-border rounded flex items-center justify-center hover:bg-white transition-colors bg-white"
+                            title="Comentários"
+                          >
+                            <FileText className="w-5 h-5" />
+                          </button>
+                          <button 
+                            onClick={() => openDialog('secondChance', plano.id)}
+                            className="w-10 h-10 border border-border rounded flex items-center justify-center hover:bg-white transition-colors bg-white"
+                            title="Segunda chance"
+                          >
+                            <CheckSquare className="w-5 h-5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Timeline Section */}
-                    <div className="pt-4 border-t border-gray-300">
-                      <div className="flex gap-4">
-                        <div className="text-sm font-semibold text-foreground whitespace-nowrap">
-                          Linha do tempo
-                        </div>
-                        <div className="flex-1">
-                          <PlanTimeline entries={plano.historico_observacoes || []} />
-                        </div>
+                    {/* Timeline Section - Outside card, white background */}
+                    <div className="px-6">
+                      <div className="text-sm font-semibold text-foreground mb-2">
+                        Linha do tempo
+                      </div>
+                      <div className="pl-4">
+                        <PlanTimeline entries={plano.historico_observacoes || []} />
                       </div>
                     </div>
                   </div>
