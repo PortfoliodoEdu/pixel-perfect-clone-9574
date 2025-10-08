@@ -33,6 +33,11 @@ export const TraderManagementTab = () => {
     loadTraders();
   }, []);
 
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   const loadTraders = async () => {
     try {
       const { data, error } = await supabase
@@ -155,11 +160,6 @@ export const TraderManagementTab = () => {
   const totalPages = Math.ceil(filteredTraders.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedTraders = filteredTraders.slice(startIndex, startIndex + itemsPerPage);
-
-  // Reset to page 1 when search changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
 
   return (
     <div className="grid grid-cols-3 gap-6">
