@@ -13,6 +13,7 @@ import { TimelineUpdateDialog } from "./TimelineUpdateDialog";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { ActivityLogger } from "@/lib/activityLogger";
 
 const PlanosAdquiridosTab = () => {
   const [planosAdquiridos, setPlanosAdquiridos] = useState<any[]>([]);
@@ -88,6 +89,7 @@ const PlanosAdquiridosTab = () => {
           .eq("id", editingPlano.id);
         
         if (error) throw error;
+        await ActivityLogger.logPlanoUpdated(editingPlano.id, formData);
         toast.success("Plano atualizado com sucesso!");
       } else {
         // Buscar o próximo ID de carteira sequencial para o trader
@@ -119,6 +121,7 @@ const PlanosAdquiridosTab = () => {
           }]);
         
         if (error) throw error;
+        await ActivityLogger.logPlanoCreated({ ...formData, id_carteira });
         toast.success(`Plano adquirido criado com ID de carteira: ${id_carteira}`);
       }
       
@@ -154,6 +157,7 @@ const PlanosAdquiridosTab = () => {
         .eq("id", id);
       
       if (error) throw error;
+      await ActivityLogger.logPlanoDeleted(id);
       toast.success("Plano excluído com sucesso!");
       loadData();
     } catch (error: any) {

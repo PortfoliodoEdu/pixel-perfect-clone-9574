@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import logoImage from "@/assets/logo-prime.png";
 import { z } from "zod";
 import { AuditLogger } from "@/lib/auditLogger";
+import { ActivityLogger } from "@/lib/activityLogger";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -146,6 +147,7 @@ const Dashboard = () => {
   };
 
   const handleLogout = async () => {
+    await ActivityLogger.logLogout();
     await AuditLogger.logLogout();
     await supabase.auth.signOut();
     navigate("/");
@@ -220,6 +222,7 @@ const Dashboard = () => {
       }
       
       console.log('Documento salvo com sucesso:', data);
+      await ActivityLogger.logDocumentUploaded(tipo);
       toast.success("Documento enviado com sucesso!");
       await loadUserData(user.id);
     } catch (error: any) {
@@ -250,6 +253,7 @@ const Dashboard = () => {
 
       if (dbError) throw dbError;
 
+      await ActivityLogger.logDocumentDeleted(docId);
       toast.success("Documento excluído com sucesso!");
       await loadUserData(user.id);
     } catch (error: any) {
@@ -304,6 +308,7 @@ const Dashboard = () => {
 
       if (error) throw error;
 
+      await ActivityLogger.logProfileUpdated(personalInfo);
       toast.success("Informações atualizadas com sucesso!");
       setIsEditing(false);
       await loadUserData(user.id);

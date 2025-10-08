@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AuditLogger } from "@/lib/auditLogger";
+import { ActivityLogger } from "@/lib/activityLogger";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Profile {
@@ -74,6 +75,7 @@ export const TraderManagementTab = () => {
         setSelectedTrader({ ...selectedTrader, pagamento_ativo: newStatus });
       }
 
+      await ActivityLogger.logPaymentStatusChanged(traderId, newStatus);
       toast.success("Status de pagamento atualizado!");
     } catch (error: any) {
       toast.error("Erro ao atualizar status: " + error.message);

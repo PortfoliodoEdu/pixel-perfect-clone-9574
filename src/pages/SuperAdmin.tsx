@@ -144,14 +144,18 @@ const SuperAdmin = () => {
 
   const fetchLogs = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke("get-system-logs");
+      const { data, error } = await supabase
+        .from('system_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(200);
 
       if (error) throw error;
 
-      setLogs(data.logs || []);
+      setLogs(data || []);
       toast({
         title: "Logs carregados",
-        description: `${data.logs?.length || 0} registros encontrados`
+        description: `${data?.length || 0} registros encontrados`
       });
     } catch (error: any) {
       toast({
@@ -316,13 +320,29 @@ const SuperAdmin = () => {
                 </Button>
                 
                 {logs.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="space-y-2 max-h-[600px] overflow-y-auto">
                     <Label>Registros ({logs.length})</Label>
-                    <Textarea
-                      value={JSON.stringify(logs, null, 2)}
-                      readOnly
-                      className="font-mono text-xs h-96"
-                    />
+                    {logs.map((log: any) => (
+                      <div key={log.id} className="p-3 bg-muted rounded-lg space-y-1">
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(log.created_at).toLocaleString('pt-BR')}
+                        </div>
+                        <div className="text-sm">
+                          <strong>{log.log_data.user?.name}</strong> ({log.log_data.user?.email})
+                        </div>
+                        <div className="text-sm">
+                          Ação: <strong>{log.log_data.action}</strong> em <strong>{log.log_data.resource}</strong>
+                        </div>
+                        {log.log_data.details && Object.keys(log.log_data.details).length > 0 && (
+                          <div className="text-xs font-mono bg-background p-2 rounded">
+                            {JSON.stringify(log.log_data.details, null, 2)}
+                          </div>
+                        )}
+                        <div className="text-xs text-muted-foreground">
+                          IP: {log.log_data.ip}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </CardContent>

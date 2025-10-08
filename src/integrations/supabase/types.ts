@@ -273,6 +273,27 @@ export type Database = {
           },
         ]
       }
+      system_logs: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          log_data: Json
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          log_data: Json
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          log_data?: Json
+        }
+        Relationships: []
+      }
       user_documents: {
         Row: {
           arquivo_url: string
@@ -337,6 +358,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_expired_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
