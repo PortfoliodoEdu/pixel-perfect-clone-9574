@@ -127,7 +127,7 @@ const Dashboard = () => {
           historico_observacoes(*)
         `)
         .eq("cliente_id", userId)
-        .order("created_at", { ascending: false });
+        .order("id_carteira", { ascending: true });
 
       setPlanosAdquiridos(planosData || []);
       

@@ -49,7 +49,7 @@ const PlanosAdquiridosTab = () => {
         *,
         profiles:cliente_id(nome, email),
         planos:plano_id(nome_plano)
-      `).order("created_at", { ascending: false }),
+      `).order("id_carteira", { ascending: true }),
       supabase.from("profiles").select("*").order("nome"),
       supabase.from("planos").select("*").order("nome_plano"),
     ]);
