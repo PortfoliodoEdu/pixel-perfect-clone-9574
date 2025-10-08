@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Upload } from "lucide-react";
+import { Upload, Search } from "lucide-react";
 
 interface Solicitacao {
   id: string;
@@ -37,6 +37,9 @@ export const SolicitacoesTab = () => {
   const [uploading, setUploading] = useState(false);
   const [comprovanteUrl, setComprovanteUrl] = useState("");
   const [updating, setUpdating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   useEffect(() => {
     loadSolicitacoes();
@@ -62,9 +65,28 @@ export const SolicitacoesTab = () => {
   };
 
   const groupByDate = (items: Solicitacao[]) => {
-    const filtered = filter === "all" 
+    let filtered = filter === "all" 
       ? items 
       : items.filter((s) => s.tipo_solicitacao === filter);
+
+    // Filtro por busca
+    if (searchQuery) {
+      filtered = filtered.filter((s) => 
+        s.profiles?.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.profiles?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getTipoLabel(s.tipo_solicitacao).toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Filtro por data
+    if (startDate) {
+      filtered = filtered.filter((s) => new Date(s.created_at) >= new Date(startDate));
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((s) => new Date(s.created_at) <= end);
+    }
 
     const grouped: Record<string, Solicitacao[]> = {};
     
@@ -207,6 +229,63 @@ export const SolicitacoesTab = () => {
         </Tabs>
       </div>
 
+      {/* Filtros */}
+      <div className="bg-white rounded-lg p-4 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="search" className="text-sm font-medium">
+              Buscar
+            </Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                id="search"
+                type="text"
+                placeholder="Nome, email ou tipo..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="startDate" className="text-sm font-medium">
+              Data Inicial
+            </Label>
+            <Input
+              id="startDate"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="endDate" className="text-sm font-medium">
+              Data Final
+            </Label>
+            <Input
+              id="endDate"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+        </div>
+        {(searchQuery || startDate || endDate) && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSearchQuery("");
+              setStartDate("");
+              setEndDate("");
+            }}
+          >
+            Limpar filtros
+          </Button>
+        )}
+      </div>
+
       <div className="space-y-6">
         {Object.keys(groupedData).length === 0 ? (
           <div className="bg-white rounded-lg p-8 text-center">
@@ -223,6 +302,7 @@ export const SolicitacoesTab = () => {
                       <th className="text-left p-4 text-sm font-medium">Trader</th>
                       <th className="text-left p-4 text-sm font-medium">Tipo</th>
                       <th className="text-left p-4 text-sm font-medium">Descrição</th>
+                      <th className="text-left p-4 text-sm font-medium">Horário</th>
                       <th className="text-left p-4 text-sm font-medium">Status</th>
                       <th className="text-left p-4 text-sm font-medium">Ações</th>
                     </tr>
@@ -238,6 +318,9 @@ export const SolicitacoesTab = () => {
                         </td>
                         <td className="p-4">{getTipoLabel(item.tipo_solicitacao)}</td>
                         <td className="p-4 text-sm">{item.descricao || "-"}</td>
+                        <td className="p-4 text-sm text-muted-foreground">
+                          {format(new Date(item.created_at), "HH:mm", { locale: ptBR })}
+                        </td>
                         <td className="p-4">{getStatusBadge(item.status)}</td>
                         <td className="p-4">
                           <Button 
