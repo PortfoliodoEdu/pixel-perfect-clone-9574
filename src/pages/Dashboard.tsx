@@ -589,45 +589,33 @@ const Dashboard = () => {
 
               {/* Document Upload Status */}
               <div className="space-y-3 pt-4 border-t">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-foreground/70" />
-                    <span className="text-sm text-foreground">CNH, RG ou CPF</span>
-                  </div>
-                  {userDocuments.some(doc => doc.tipo_documento === 'cnh') ? (
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-green-600 font-medium">Enviado</span>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => cnhInputRef.current?.click()}
-                      className="text-sm text-primary underline"
-                    >
-                      Anexar
-                    </button>
-                  )}
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-foreground/70" />
+                  <button
+                    type="button"
+                    onClick={() => cnhInputRef.current?.click()}
+                    className={`text-sm underline transition-colors ${
+                      userDocuments.some(doc => doc.tipo_documento === 'cnh')
+                        ? 'text-green-600 hover:text-green-700'
+                        : 'text-red-600 hover:text-red-700'
+                    }`}
+                  >
+                    CNH, RG ou CPF
+                  </button>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-foreground/70" />
-                    <span className="text-sm text-foreground">Selfie segurando RG</span>
-                  </div>
-                  {userDocuments.some(doc => doc.tipo_documento === 'selfie_rg') ? (
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-green-600 font-medium">Enviado</span>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => selfieInputRef.current?.click()}
-                      className="text-sm text-primary underline"
-                    >
-                      Anexar
-                    </button>
-                  )}
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-foreground/70" />
+                  <button
+                    type="button"
+                    onClick={() => selfieInputRef.current?.click()}
+                    className={`text-sm underline transition-colors ${
+                      userDocuments.some(doc => doc.tipo_documento === 'selfie_rg')
+                        ? 'text-green-600 hover:text-green-700'
+                        : 'text-red-600 hover:text-red-700'
+                    }`}
+                  >
+                    Selfie segurando RG
+                  </button>
                 </div>
                 {/* Inputs de arquivo ocultos para disparar o upload */}
                 <input
