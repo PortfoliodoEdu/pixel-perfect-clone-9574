@@ -6,10 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Clock } from "lucide-react";
+import { Plus, Pencil, Trash2, Clock, Check, ChevronsUpDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { TimelineUpdateDialog } from "./TimelineUpdateDialog";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 const PlanosAdquiridosTab = () => {
   const [planosAdquiridos, setPlanosAdquiridos] = useState<any[]>([]);
@@ -21,6 +24,7 @@ const PlanosAdquiridosTab = () => {
   const [selectedTimelineEntry, setSelectedTimelineEntry] = useState<any>(null);
   const [timelineUpdateOpen, setTimelineUpdateOpen] = useState(false);
   const [editingPlano, setEditingPlano] = useState<any>(null);
+  const [clienteOpen, setClienteOpen] = useState(false);
   const [formData, setFormData] = useState<{
     cliente_id: string;
     plano_id: string;
@@ -186,16 +190,53 @@ const PlanosAdquiridosTab = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label>Cliente</Label>
-                <Select value={formData.cliente_id} onValueChange={(value) => setFormData({ ...formData, cliente_id: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientes.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={clienteOpen} onOpenChange={setClienteOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={clienteOpen}
+                      className="w-full justify-between"
+                      disabled={!!editingPlano}
+                    >
+                      {formData.cliente_id
+                        ? clientes.find((c) => c.id === formData.cliente_id)?.nome
+                        : "Selecione um cliente..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0 bg-background z-50">
+                    <Command>
+                      <CommandInput placeholder="Buscar por nome ou email..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {clientes.map((c) => (
+                            <CommandItem
+                              key={c.id}
+                              value={`${c.nome} ${c.email}`}
+                              onSelect={() => {
+                                setFormData({ ...formData, cliente_id: c.id });
+                                setClienteOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.cliente_id === c.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex flex-col">
+                                <span className="font-medium">{c.nome}</span>
+                                <span className="text-xs text-muted-foreground">{c.email}</span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div>
                 <Label>Plano</Label>
