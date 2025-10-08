@@ -316,29 +316,31 @@ export const SolicitacoesTab = () => {
                   </Select>
                 </div>
 
-                <div>
-                  <Label>Comprovante</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="file"
-                      onChange={handleFileUpload}
-                      disabled={uploading}
-                      accept=".pdf,.jpg,.jpeg,.png"
-                    />
-                    {uploading && <span className="text-sm text-muted-foreground">Enviando...</span>}
+                {status === "efetuado" && (
+                  <div>
+                    <Label>Comprovante</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="file"
+                        onChange={handleFileUpload}
+                        disabled={uploading}
+                        accept=".pdf,.jpg,.jpeg,.png"
+                      />
+                      {uploading && <span className="text-sm text-muted-foreground">Enviando...</span>}
+                    </div>
+                    {comprovanteUrl && (
+                      <a 
+                        href={comprovanteUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline flex items-center gap-1 mt-2"
+                      >
+                        <Upload className="w-3 h-3" />
+                        Ver comprovante anexado
+                      </a>
+                    )}
                   </div>
-                  {comprovanteUrl && (
-                    <a 
-                      href={comprovanteUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline flex items-center gap-1 mt-2"
-                    >
-                      <Upload className="w-3 h-3" />
-                      Ver comprovante anexado
-                    </a>
-                  )}
-                </div>
+                )}
 
                 <Button 
                   onClick={handleUpdateSolicitacao} 
