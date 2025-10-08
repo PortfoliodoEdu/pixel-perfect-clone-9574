@@ -25,6 +25,9 @@ const PlanosAdquiridosTab = () => {
   const [timelineUpdateOpen, setTimelineUpdateOpen] = useState(false);
   const [editingPlano, setEditingPlano] = useState<any>(null);
   const [clienteOpen, setClienteOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"id_carteira" | "status_plano" | "created_at">("id_carteira");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [formData, setFormData] = useState<{
     cliente_id: string;
     plano_id: string;
@@ -184,10 +187,73 @@ const PlanosAdquiridosTab = () => {
     return <Badge variant={colors[status] || "default"}>{status}</Badge>;
   };
 
+  // Apply filters and sorting
+  const filteredAndSortedPlanos = planosAdquiridos
+    .filter(plano => statusFilter === "all" ? true : plano.status_plano === statusFilter)
+    .sort((a, b) => {
+      let aValue, bValue;
+      
+      if (sortBy === "id_carteira") {
+        aValue = a.id_carteira;
+        bValue = b.id_carteira;
+      } else if (sortBy === "status_plano") {
+        aValue = a.status_plano;
+        bValue = b.status_plano;
+      } else {
+        aValue = new Date(a.created_at).getTime();
+        bValue = new Date(b.created_at).getTime();
+      }
+      
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center gap-4">
         <h2 className="text-2xl font-bold">Gerenciar Planos Adquiridos</h2>
+        
+        {/* Filters and sorting */}
+        <div className="flex gap-2 items-center flex-1 max-w-2xl">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrar status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="ativo">Ativo</SelectItem>
+              <SelectItem value="eliminado">Eliminado</SelectItem>
+              <SelectItem value="pausado">Pausado</SelectItem>
+              <SelectItem value="segunda_chance">Segunda Chance</SelectItem>
+              <SelectItem value="sim_rem">Sim Rem</SelectItem>
+              <SelectItem value="teste_1">Teste 1</SelectItem>
+              <SelectItem value="teste_2">Teste 2</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Ordenar por" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="id_carteira">ID Carteira</SelectItem>
+              <SelectItem value="status_plano">Status</SelectItem>
+              <SelectItem value="created_at">Data de criação</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+          >
+            {sortOrder === "asc" ? "↑" : "↓"}
+          </Button>
+        </div>
+        
         <Dialog open={open} onOpenChange={(isOpen) => {
           setOpen(isOpen);
           if (!isOpen) {
@@ -332,7 +398,7 @@ const PlanosAdquiridosTab = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {planosAdquiridos.map((pa) => (
+          {filteredAndSortedPlanos.map((pa) => (
             <TableRow key={pa.id}>
               <TableCell>{pa.profiles?.nome || "-"}</TableCell>
               <TableCell>{pa.planos?.nome_plano || "-"}</TableCell>

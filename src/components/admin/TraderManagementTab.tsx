@@ -27,6 +27,7 @@ export const TraderManagementTab = () => {
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "active" | "inactive">("all");
   const itemsPerPage = 5;
 
   useEffect(() => {
@@ -158,13 +159,15 @@ export const TraderManagementTab = () => {
     return <div className="p-8">Carregando traders...</div>;
   }
 
-  // Filter traders based on search query
+  // Filter traders based on search query and payment status
   const filteredTraders = traders.filter((trader) => {
     const query = searchQuery.toLowerCase();
-    return (
-      trader.nome.toLowerCase().includes(query) ||
-      trader.email.toLowerCase().includes(query)
-    );
+    const matchesSearch = trader.nome.toLowerCase().includes(query) || trader.email.toLowerCase().includes(query);
+    const matchesPayment = 
+      paymentFilter === "all" ? true :
+      paymentFilter === "active" ? trader.pagamento_ativo :
+      !trader.pagamento_ativo;
+    return matchesSearch && matchesPayment;
   });
 
   // Calculate pagination
@@ -172,11 +175,37 @@ export const TraderManagementTab = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedTraders = filteredTraders.slice(startIndex, startIndex + itemsPerPage);
 
+  // Counters
+  const activeCount = traders.filter(t => t.pagamento_ativo).length;
+  const inactiveCount = traders.filter(t => !t.pagamento_ativo).length;
+
   return (
     <div className="grid grid-cols-3 gap-6">
       {/* Traders List */}
       <div className="col-span-1 bg-white rounded-lg p-6 space-y-4">
         <h3 className="text-lg font-bold">Traders</h3>
+        
+        {/* Stats */}
+        <div className="flex gap-2 text-xs">
+          <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
+            Ativos: {activeCount}
+          </span>
+          <span className="px-2 py-1 bg-red-100 text-red-800 rounded">
+            Inativos: {inactiveCount}
+          </span>
+        </div>
+
+        {/* Payment Filter */}
+        <Select value={paymentFilter} onValueChange={(value: any) => setPaymentFilter(value)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os pagamentos</SelectItem>
+            <SelectItem value="active">Pagamento ativo</SelectItem>
+            <SelectItem value="inactive">Pagamento inativo</SelectItem>
+          </SelectContent>
+        </Select>
         
         {/* Search Bar */}
         <Input
