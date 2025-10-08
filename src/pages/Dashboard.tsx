@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Pencil, Check, FileText } from "lucide-react";
+import { Pencil, Check, Eye } from "lucide-react";
+import { DocumentViewDialog } from "@/components/dashboard/DocumentViewDialog";
 import iconsRecomecar from "@/assets/icons-recomecar.png";
 import iconsSaque from "@/assets/icons-saque.png";
 import iconsComentarios from "@/assets/icons-comentarios.png";
@@ -11,6 +12,7 @@ import { WithdrawalRequestDialog } from "@/components/dashboard/WithdrawalReques
 import { BiweeklyWithdrawalDialog } from "@/components/dashboard/BiweeklyWithdrawalDialog";
 import { SecondChanceDialog } from "@/components/dashboard/SecondChanceDialog";
 import { CommentsDialog } from "@/components/dashboard/CommentsDialog";
+import { ApprovalRequestDialog } from "@/components/dashboard/ApprovalRequestDialog";
 
 import { ProfilePictureUpload } from "@/components/dashboard/ProfilePictureUpload";
 import { UserMenu } from "@/components/dashboard/UserMenu";
@@ -29,7 +31,7 @@ const Dashboard = () => {
   const [planosAdquiridos, setPlanosAdquiridos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeDialog, setActiveDialog] = useState<{
-    type: 'withdrawal' | 'biweekly' | 'secondChance' | 'comments' | null;
+    type: 'withdrawal' | 'biweekly' | 'secondChance' | 'comments' | 'approval' | null;
     planId: string;
   }>({ type: null, planId: '' });
   const [personalInfo, setPersonalInfo] = useState({
@@ -47,6 +49,8 @@ const Dashboard = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [userDocuments, setUserDocuments] = useState<any[]>([]);
+  const [cnhViewOpen, setCnhViewOpen] = useState(false);
+  const [selfieViewOpen, setSelfieViewOpen] = useState(false);
   const user = session?.user || null;
   const cnhInputRef = useRef<HTMLInputElement>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
@@ -157,7 +161,7 @@ const Dashboard = () => {
     window.open("https://wa.me/", "_blank");
   };
 
-  const openDialog = (type: 'withdrawal' | 'biweekly' | 'secondChance' | 'comments', planId: string) => {
+  const openDialog = (type: 'withdrawal' | 'biweekly' | 'secondChance' | 'comments' | 'approval', planId: string) => {
     setActiveDialog({ type, planId });
   };
 
@@ -433,7 +437,7 @@ const Dashboard = () => {
                             <img src={iconsComentarios} alt="Comentários" className="w-5 h-5" />
                           </button>
                           <button 
-                            onClick={() => openDialog('biweekly', plano.id)}
+                            onClick={() => openDialog('approval', plano.id)}
                             className="w-10 h-10 border border-border rounded flex items-center justify-center hover:bg-white transition-colors bg-white"
                             title="Solicitar aprovação"
                           >
@@ -628,34 +632,24 @@ const Dashboard = () => {
 
               {/* Document Upload Status */}
               <div className="space-y-3 pt-4 border-t">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-foreground/70" />
-                  <button
-                    type="button"
-                    onClick={() => cnhInputRef.current?.click()}
-                    className={`text-sm underline transition-colors ${
-                      userDocuments.some(doc => doc.tipo_documento === 'cnh')
-                        ? 'text-green-600 hover:text-green-700'
-                        : 'text-red-600 hover:text-red-700'
-                    }`}
-                  >
-                    CNH, RG ou CPF
-                  </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-foreground/70" />
-                  <button
-                    type="button"
-                    onClick={() => selfieInputRef.current?.click()}
-                    className={`text-sm underline transition-colors ${
-                      userDocuments.some(doc => doc.tipo_documento === 'selfie_rg')
-                        ? 'text-green-600 hover:text-green-700'
-                        : 'text-red-600 hover:text-red-700'
-                    }`}
-                  >
-                    Selfie segurando RG
-                  </button>
-                </div>
+                <DocumentViewDialog
+                  tipo="cnh"
+                  label="CNH, RG ou CPF"
+                  hasDocument={userDocuments.some(doc => doc.tipo_documento === 'cnh')}
+                  documentUrl={userDocuments.find(doc => doc.tipo_documento === 'cnh')?.arquivo_url}
+                  open={cnhViewOpen}
+                  onOpenChange={setCnhViewOpen}
+                  onUploadClick={() => cnhInputRef.current?.click()}
+                />
+                <DocumentViewDialog
+                  tipo="selfie_rg"
+                  label="Selfie segurando RG"
+                  hasDocument={userDocuments.some(doc => doc.tipo_documento === 'selfie_rg')}
+                  documentUrl={userDocuments.find(doc => doc.tipo_documento === 'selfie_rg')?.arquivo_url}
+                  open={selfieViewOpen}
+                  onOpenChange={setSelfieViewOpen}
+                  onUploadClick={() => selfieInputRef.current?.click()}
+                />
                 {/* Inputs de arquivo ocultos para disparar o upload */}
                 <input
                   ref={cnhInputRef}
@@ -768,6 +762,11 @@ const Dashboard = () => {
         open={activeDialog.type === 'comments'}
         onOpenChange={closeDialog}
         planId={activeDialog.planId}
+      />
+      <ApprovalRequestDialog
+        open={activeDialog.type === 'approval'}
+        onOpenChange={closeDialog}
+        planoId={activeDialog.planId}
       />
     </div>
   );
