@@ -40,6 +40,7 @@ export const SolicitacoesTab = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [observacaoTimeline, setObservacaoTimeline] = useState("");
 
   useEffect(() => {
     loadSolicitacoes();
@@ -130,6 +131,7 @@ export const SolicitacoesTab = () => {
     setValorFinal("");
     setStatus("pendente");
     setComprovanteUrl("");
+    setObservacaoTimeline("");
     setDialogOpen(true);
   };
 
@@ -174,28 +176,45 @@ export const SolicitacoesTab = () => {
         .from('solicitacoes')
         .update({
           status: status,
-          resposta_admin: valorFinal ? `Valor final: R$ ${valorFinal}` : null
+          resposta_admin: observacaoTimeline || (valorFinal ? `Valor final: R$ ${valorFinal}` : null)
         })
         .eq('id', selectedSolicitacao.id);
 
       if (solicitacaoError) throw solicitacaoError;
 
-      // Atualizar o histórico relacionado
+      // Criar ou atualizar o histórico relacionado
       const { data: historicoData } = await supabase
         .from('historico_observacoes')
-        .select('id')
+        .select('id, observacao')
         .eq('solicitacao_id', selectedSolicitacao.id)
-        .single();
+        .maybeSingle();
 
       if (historicoData) {
+        // Atualizar histórico existente
         const { error: historicoError } = await supabase
           .from('historico_observacoes')
           .update({
             valor_final: valorFinal ? parseFloat(valorFinal) : null,
             status_evento: status,
-            comprovante_url: comprovanteUrl || null
+            comprovante_url: comprovanteUrl || null,
+            observacao: observacaoTimeline || historicoData.observacao || '',
           })
           .eq('id', historicoData.id);
+
+        if (historicoError) throw historicoError;
+      } else if (selectedSolicitacao.plano_adquirido_id) {
+        // Criar novo histórico se não existir
+        const { error: historicoError } = await supabase
+          .from('historico_observacoes')
+          .insert({
+            plano_adquirido_id: selectedSolicitacao.plano_adquirido_id,
+            solicitacao_id: selectedSolicitacao.id,
+            tipo_evento: selectedSolicitacao.tipo_solicitacao,
+            observacao: observacaoTimeline || selectedSolicitacao.descricao || '',
+            valor_final: valorFinal ? parseFloat(valorFinal) : null,
+            status_evento: status,
+            comprovante_url: comprovanteUrl || null,
+          });
 
         if (historicoError) throw historicoError;
       }
@@ -346,9 +365,9 @@ export const SolicitacoesTab = () => {
 
       {/* Dialog para atualizar solicitação */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Atualizar Solicitação de Saque</DialogTitle>
+            <DialogTitle>Atualizar Solicitação</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {selectedSolicitacao && (
@@ -364,26 +383,48 @@ export const SolicitacoesTab = () => {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium">Valor Solicitado</Label>
-                  <Input
-                    type="text"
-                    value={selectedSolicitacao.descricao ? 
-                      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(selectedSolicitacao.descricao)) 
-                      : '-'}
-                    disabled
-                    className="bg-muted"
-                  />
+                  <Label className="text-sm font-medium">Descrição Original</Label>
+                  <p className="text-sm text-muted-foreground">{selectedSolicitacao.descricao || '-'}</p>
                 </div>
 
+                {selectedSolicitacao.tipo_solicitacao === 'saque' && (
+                  <>
+                    <div>
+                      <Label className="text-sm font-medium">Valor Solicitado</Label>
+                      <Input
+                        type="text"
+                        value={selectedSolicitacao.descricao ? 
+                          new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(selectedSolicitacao.descricao)) 
+                          : '-'}
+                        disabled
+                        className="bg-muted"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Valor Final</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={valorFinal}
+                        onChange={(e) => setValorFinal(e.target.value)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </>
+                )}
+
                 <div>
-                  <Label>Valor Final</Label>
+                  <Label>Observação para a Linha do Tempo</Label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    value={valorFinal}
-                    onChange={(e) => setValorFinal(e.target.value)}
-                    placeholder="0.00"
+                    type="text"
+                    value={observacaoTimeline}
+                    onChange={(e) => setObservacaoTimeline(e.target.value)}
+                    placeholder="Ex: Aprovação solicitada, Segunda chance aprovada, etc."
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Esta mensagem aparecerá na linha do tempo do plano do trader
+                  </p>
                 </div>
 
                 <div>
@@ -403,7 +444,7 @@ export const SolicitacoesTab = () => {
                   </Select>
                 </div>
 
-                {status === "efetuado" && (
+                {(status === "efetuado" || selectedSolicitacao.tipo_solicitacao === 'saque') && (
                   <div>
                     <Label>Comprovante</Label>
                     <div className="flex gap-2">
