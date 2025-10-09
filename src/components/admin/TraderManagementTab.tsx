@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AuditLogger } from "@/lib/auditLogger";
 import { ActivityLogger } from "@/lib/activityLogger";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { TraderDetailsDialog } from "./TraderDetailsDialog";
 
 interface Profile {
   id: string;
@@ -29,6 +30,7 @@ export const TraderManagementTab = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [paymentFilter, setPaymentFilter] = useState<"all" | "active" | "inactive">("all");
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const itemsPerPage = 5;
 
   useEffect(() => {
@@ -269,10 +271,17 @@ export const TraderManagementTab = () => {
       <div className="col-span-2 bg-white rounded-lg p-6 space-y-6">
         {selectedTrader ? (
           <>
-            <div>
-              <h3 className="text-lg font-bold mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold">
                 Gerenciar: {selectedTrader.nome}
               </h3>
+              <Button
+                variant="outline"
+                onClick={() => setShowDetailsDialog(true)}
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                Ver Dados Completos
+              </Button>
             </div>
 
             {/* Payment Status */}
@@ -340,6 +349,15 @@ export const TraderManagementTab = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {selectedTrader && (
+          <TraderDetailsDialog
+            open={showDetailsDialog}
+            onOpenChange={setShowDetailsDialog}
+            traderId={selectedTrader.id}
+            traderName={selectedTrader.nome}
+          />
+        )}
       </div>
     </div>
   );
