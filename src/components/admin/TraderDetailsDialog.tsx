@@ -3,9 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { FileText, Eye } from "lucide-react";
+import { FileText, Eye, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { AdminDocumentViewDialog } from "./AdminDocumentViewDialog";
+import { Badge } from "@/components/ui/badge";
+import { TimelineUpdateDialog } from "./TimelineUpdateDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface TraderDetailsDialogProps {
   open: boolean;
@@ -49,6 +52,9 @@ export const TraderDetailsDialog = ({
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewDocument, setViewDocument] = useState<Document | null>(null);
+  const [planosAdquiridos, setPlanosAdquiridos] = useState<any[]>([]);
+  const [selectedTimelineEntry, setSelectedTimelineEntry] = useState<any>(null);
+  const [timelineUpdateOpen, setTimelineUpdateOpen] = useState(false);
 
   useEffect(() => {
     if (open && traderId) {
@@ -78,11 +84,48 @@ export const TraderDetailsDialog = ({
 
       if (docsError) throw docsError;
       setDocuments(docsData || []);
+
+      // Carregar planos adquiridos com histórico
+      const { data: planosData, error: planosError } = await supabase
+        .from("planos_adquiridos")
+        .select(`
+          *,
+          planos:plano_id(nome_plano)
+        `)
+        .eq("cliente_id", traderId)
+        .order("created_at", { ascending: false });
+
+      if (planosError) throw planosError;
+
+      // Para cada plano, carregar o histórico
+      const planosComHistorico = await Promise.all(
+        (planosData || []).map(async (plano) => {
+          const { data: historico } = await supabase
+            .from("historico_observacoes")
+            .select("*")
+            .eq("plano_adquirido_id", plano.id)
+            .order("created_at", { ascending: false });
+
+          return { ...plano, historico: historico || [] };
+        })
+      );
+
+      setPlanosAdquiridos(planosComHistorico);
     } catch (error: any) {
       toast.error("Erro ao carregar dados: " + error.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTimelineEntryClick = (entry: any) => {
+    setSelectedTimelineEntry(entry);
+    setTimelineUpdateOpen(true);
+  };
+
+  const reloadTimeline = async () => {
+    // Recarregar dados após atualização
+    await loadTraderData();
   };
 
   const formatDate = (date: string | null) => {
@@ -215,48 +258,135 @@ export const TraderDetailsDialog = ({
                 </div>
               </div>
 
-              {/* Documentos */}
-              <div>
-                <h4 className="font-bold mb-3">Documentos Anexados</h4>
-                {documents.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhum documento anexado</p>
-                ) : (
-                  <div className="space-y-2">
-                    {documents.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-5 w-5 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-sm">
-                              {getDocumentTypeLabel(doc.tipo_documento)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatDate(doc.created_at)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {getStatusBadge(doc.status)}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setViewDocument(doc)}
+              <Tabs defaultValue="info" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="info">Informações e Documentos</TabsTrigger>
+                  <TabsTrigger value="timeline">Linha do Tempo</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="info" className="space-y-6">
+                  {/* Documentos */}
+                  <div>
+                    <h4 className="font-bold mb-3">Documentos Anexados</h4>
+                    {documents.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Nenhum documento anexado</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {documents.map((doc) => (
+                          <div
+                            key={doc.id}
+                            className="flex items-center justify-between p-3 bg-muted rounded-lg"
                           >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </div>
+                            <div className="flex items-center gap-3">
+                              <FileText className="h-5 w-5 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium text-sm">
+                                  {getDocumentTypeLabel(doc.tipo_documento)}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatDate(doc.created_at)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {getStatusBadge(doc.status)}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setViewDocument(doc)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
+                </TabsContent>
+
+                <TabsContent value="timeline" className="space-y-4">
+                  {planosAdquiridos.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhum plano adquirido encontrado</p>
+                  ) : (
+                    planosAdquiridos.map((plano) => (
+                      <div key={plano.id} className="space-y-3">
+                        <div className="flex items-center gap-2 pb-2 border-b">
+                          <h5 className="font-bold">{plano.planos?.nome_plano || "Plano"}</h5>
+                          <Badge variant="outline">ID: {plano.id_carteira}</Badge>
+                        </div>
+                        {plano.historico.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">Nenhuma atividade registrada</p>
+                        ) : (
+                          <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {plano.historico.map((h: any) => (
+                              <div
+                                key={h.id}
+                                className="border-l-2 border-primary pl-4 py-3 hover:bg-muted/50 cursor-pointer rounded"
+                                onClick={() => handleTimelineEntryClick(h)}
+                              >
+                                <p className="text-sm text-muted-foreground mb-1">
+                                  {new Date(h.created_at).toLocaleString("pt-BR")}
+                                </p>
+                                <div className="text-sm space-y-1">
+                                  {h.tipo_evento && (
+                                    <p>
+                                      <strong>Evento:</strong> {h.tipo_evento}
+                                    </p>
+                                  )}
+                                  {h.observacao && (
+                                    <p>
+                                      <strong>Observação:</strong> {h.observacao}
+                                    </p>
+                                  )}
+                                  {h.valor_solicitado && (
+                                    <p>
+                                      <strong>Valor Solicitado:</strong> R${" "}
+                                      {parseFloat(h.valor_solicitado).toFixed(2)}
+                                    </p>
+                                  )}
+                                  {h.valor_final && (
+                                    <p>
+                                      <strong>Valor Final:</strong> R${" "}
+                                      {parseFloat(h.valor_final).toFixed(2)}
+                                    </p>
+                                  )}
+                                  {h.status_evento && (
+                                    <p>
+                                      <strong>Status:</strong> {h.status_evento}
+                                    </p>
+                                  )}
+                                  {h.comprovante_url && (
+                                    <a
+                                      href={h.comprovante_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-500 hover:underline"
+                                    >
+                                      Ver comprovante
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      <TimelineUpdateDialog
+        open={timelineUpdateOpen}
+        onOpenChange={setTimelineUpdateOpen}
+        timelineEntry={selectedTimelineEntry}
+        onUpdate={reloadTimeline}
+      />
 
       {viewDocument && (
         <AdminDocumentViewDialog

@@ -6,10 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Clock, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Check, ChevronsUpDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { TimelineUpdateDialog } from "./TimelineUpdateDialog";
+
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -20,10 +20,6 @@ const PlanosAdquiridosTab = () => {
   const [clientes, setClientes] = useState<any[]>([]);
   const [planos, setPlanos] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
-  const [timelineOpen, setTimelineOpen] = useState(false);
-  const [selectedPlano, setSelectedPlano] = useState<any>(null);
-  const [selectedTimelineEntry, setSelectedTimelineEntry] = useState<any>(null);
-  const [timelineUpdateOpen, setTimelineUpdateOpen] = useState(false);
   const [editingPlano, setEditingPlano] = useState<any>(null);
   const [clienteOpen, setClienteOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -165,21 +161,6 @@ const PlanosAdquiridosTab = () => {
     }
   };
 
-  const openTimeline = async (plano: any) => {
-    const { data } = await supabase
-      .from("historico_observacoes")
-      .select("*")
-      .eq("plano_adquirido_id", plano.id)
-      .order("created_at", { ascending: false });
-    
-    setSelectedPlano({ ...plano, historico: data || [] });
-    setTimelineOpen(true);
-  };
-
-  const handleTimelineEntryClick = (entry: any) => {
-    setSelectedTimelineEntry(entry);
-    setTimelineUpdateOpen(true);
-  };
 
   const getStatusBadge = (status: string) => {
     const colors: any = {
@@ -414,9 +395,6 @@ const PlanosAdquiridosTab = () => {
                   <Button size="sm" variant="outline" onClick={() => handleEdit(pa)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => openTimeline(pa)} title="Ver linha do tempo">
-                    <Clock className="h-4 w-4" />
-                  </Button>
                   <Button size="sm" variant="outline" onClick={() => handleDelete(pa.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -426,55 +404,6 @@ const PlanosAdquiridosTab = () => {
           ))}
         </TableBody>
       </Table>
-
-      <Dialog open={timelineOpen} onOpenChange={setTimelineOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Linha do Tempo - {selectedPlano?.planos?.nome_plano}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {selectedPlano?.historico?.map((h: any) => (
-                <div 
-                  key={h.id} 
-                  className="border-l-2 border-primary pl-4 py-3 hover:bg-muted/50 cursor-pointer rounded"
-                  onClick={() => handleTimelineEntryClick(h)}
-                >
-                  <p className="text-sm text-muted-foreground mb-1">
-                    {new Date(h.created_at).toLocaleString("pt-BR")}
-                  </p>
-                  <div className="text-sm space-y-1">
-                    {h.tipo_evento && <p><strong>Tipo:</strong> {h.tipo_evento}</p>}
-                    {h.valor_solicitado && (
-                      <p><strong>Valor solicitado:</strong> {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(h.valor_solicitado)}</p>
-                    )}
-                    {h.valor_final && (
-                      <p><strong>Valor final:</strong> {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(h.valor_final)}</p>
-                    )}
-                    <p><strong>Status:</strong> {h.status_evento}</p>
-                    {h.comprovante_url && (
-                      <a href={h.comprovante_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                        Ver comprovante
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="text-sm text-muted-foreground">Clique em uma entrada para editá-la</p>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <TimelineUpdateDialog
-        open={timelineUpdateOpen}
-        onOpenChange={setTimelineUpdateOpen}
-        timelineEntry={selectedTimelineEntry}
-        onUpdate={() => {
-          loadData();
-          if (selectedPlano) openTimeline(selectedPlano);
-        }}
-      />
     </div>
   );
 };

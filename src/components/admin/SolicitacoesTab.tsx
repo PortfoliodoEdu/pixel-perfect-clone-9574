@@ -373,31 +373,29 @@ export const SolicitacoesTab = () => {
             {selectedSolicitacao && (
               <>
                 <div>
-                  <Label>Mensagens Rápidas</Label>
-                  <Select onValueChange={(value) => setObservacaoTimeline(value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma mensagem padrão..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Aprovação solicitada">Aprovação solicitada</SelectItem>
-                      <SelectItem value="Segunda chance aprovada">Segunda chance aprovada</SelectItem>
-                      <SelectItem value="Saque aprovado">Saque aprovado</SelectItem>
-                      <SelectItem value="Saque efetuado">Saque efetuado</SelectItem>
-                      <SelectItem value="Solicitação em análise">Solicitação em análise</SelectItem>
-                      <SelectItem value="Documentação pendente">Documentação pendente</SelectItem>
-                      <SelectItem value="Aguardando aprovação">Aguardando aprovação</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
                   <Label>Observação para a Linha do Tempo</Label>
-                  <Input
-                    type="text"
-                    value={observacaoTimeline}
-                    onChange={(e) => setObservacaoTimeline(e.target.value)}
-                    placeholder="Digite uma observação personalizada..."
-                  />
+                  <div className="space-y-2">
+                    <Select onValueChange={(value) => setObservacaoTimeline(value)} value="">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma mensagem padrão..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Aprovação solicitada">Aprovação solicitada</SelectItem>
+                        <SelectItem value="Segunda chance aprovada">Segunda chance aprovada</SelectItem>
+                        <SelectItem value="Saque aprovado">Saque aprovado</SelectItem>
+                        <SelectItem value="Saque efetuado">Saque efetuado</SelectItem>
+                        <SelectItem value="Solicitação em análise">Solicitação em análise</SelectItem>
+                        <SelectItem value="Documentação pendente">Documentação pendente</SelectItem>
+                        <SelectItem value="Aguardando aprovação">Aguardando aprovação</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="text"
+                      value={observacaoTimeline}
+                      onChange={(e) => setObservacaoTimeline(e.target.value)}
+                      placeholder="Ou digite uma observação personalizada..."
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -405,7 +403,7 @@ export const SolicitacoesTab = () => {
                   <div className="space-y-2">
                     <Select value={status} onValueChange={setStatus}>
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Selecione um status..." />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="pendente">Pendente</SelectItem>
@@ -419,6 +417,7 @@ export const SolicitacoesTab = () => {
                     <Input
                       type="text"
                       placeholder="Ou digite um status customizado..."
+                      value=""
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && e.currentTarget.value) {
                           setStatus(e.currentTarget.value.toLowerCase());
