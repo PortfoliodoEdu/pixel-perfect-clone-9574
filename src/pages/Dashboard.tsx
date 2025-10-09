@@ -428,8 +428,10 @@ const Dashboard = () => {
 
           {/* Plans Section */}
           <div className="space-y-6">
-            <h3 className="text-[32px] font-bold text-foreground">Planos adquiridos</h3>
-            <div className="border-b border-border/30"></div>
+            <div>
+              <h3 className="text-[32px] font-bold text-foreground">Planos adquiridos</h3>
+              <div className="border-b border-border/30 mt-2"></div>
+            </div>
 
             {planosAdquiridos.length === 0 ? (
               <div className="pt-32 pb-32 text-center">
