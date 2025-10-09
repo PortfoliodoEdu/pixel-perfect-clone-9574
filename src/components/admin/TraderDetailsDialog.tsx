@@ -310,67 +310,126 @@ export const TraderDetailsDialog = ({
                     <p className="text-sm text-muted-foreground">Nenhum plano adquirido encontrado</p>
                   ) : (
                     planosAdquiridos.map((plano) => (
-                      <div key={plano.id} className="space-y-3">
-                        <div className="flex items-center gap-2 pb-2 border-b">
-                          <h5 className="font-bold">{plano.planos?.nome_plano || "Plano"}</h5>
-                          <Badge variant="outline">ID: {plano.id_carteira}</Badge>
-                        </div>
-                        {plano.historico.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">Nenhuma atividade registrada</p>
-                        ) : (
-                          <div className="space-y-2 max-h-96 overflow-y-auto">
-                            {plano.historico.map((h: any) => (
-                              <div
-                                key={h.id}
-                                className="border-l-2 border-primary pl-4 py-3 hover:bg-muted/50 cursor-pointer rounded"
-                                onClick={() => handleTimelineEntryClick(h)}
-                              >
-                                <p className="text-sm text-muted-foreground mb-1">
-                                  {new Date(h.created_at).toLocaleString("pt-BR")}
-                                </p>
-                                <div className="text-sm space-y-1">
-                                  {h.tipo_evento && (
-                                    <p>
-                                      <strong>Evento:</strong> {h.tipo_evento}
-                                    </p>
-                                  )}
-                                  {h.observacao && (
-                                    <p>
-                                      <strong>Observação:</strong> {h.observacao}
-                                    </p>
-                                  )}
-                                  {h.valor_solicitado && (
-                                    <p>
-                                      <strong>Valor Solicitado:</strong> R${" "}
-                                      {parseFloat(h.valor_solicitado).toFixed(2)}
-                                    </p>
-                                  )}
-                                  {h.valor_final && (
-                                    <p>
-                                      <strong>Valor Final:</strong> R${" "}
-                                      {parseFloat(h.valor_final).toFixed(2)}
-                                    </p>
-                                  )}
-                                  {h.status_evento && (
-                                    <p>
-                                      <strong>Status:</strong> {h.status_evento}
-                                    </p>
-                                  )}
-                                  {h.comprovante_url && (
-                                    <a
-                                      href={h.comprovante_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-500 hover:underline"
-                                    >
-                                      Ver comprovante
-                                    </a>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
+                      <div key={plano.id} className="border rounded-lg p-4 space-y-4 bg-card">
+                        {/* Cabeçalho do Plano */}
+                        <div className="flex items-start justify-between pb-3 border-b">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <h5 className="font-bold text-lg">{plano.planos?.nome_plano || "Plano"}</h5>
+                              <Badge variant="outline" className="font-mono">
+                                #{plano.id_carteira}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span>
+                                <strong>Status:</strong>{" "}
+                                <Badge 
+                                  variant={
+                                    plano.status_plano === "ativo" ? "default" :
+                                    plano.status_plano === "eliminado" ? "destructive" :
+                                    plano.status_plano === "segunda_chance" ? "secondary" :
+                                    "outline"
+                                  }
+                                >
+                                  {plano.status_plano}
+                                </Badge>
+                              </span>
+                              <span>
+                                <strong>Tipo Saque:</strong> {plano.tipo_saque}
+                              </span>
+                              <span>
+                                <strong>Adquirido em:</strong>{" "}
+                                {new Date(plano.created_at).toLocaleDateString("pt-BR")}
+                              </span>
+                            </div>
                           </div>
-                        )}
+                        </div>
+
+                        {/* Timeline do Plano */}
+                        <div>
+                          <h6 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wide">
+                            Histórico de Atividades
+                          </h6>
+                          {plano.historico.length === 0 ? (
+                            <p className="text-sm text-muted-foreground italic">
+                              Nenhuma atividade registrada para este plano
+                            </p>
+                          ) : (
+                            <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                              {plano.historico.map((h: any) => (
+                                <div
+                                  key={h.id}
+                                  className="relative pl-6 pb-4 border-l-2 border-primary/30 hover:border-primary transition-colors cursor-pointer group"
+                                  onClick={() => handleTimelineEntryClick(h)}
+                                >
+                                  {/* Bolinha na linha do tempo */}
+                                  <div className="absolute left-[-5px] top-1 w-3 h-3 rounded-full bg-primary group-hover:scale-125 transition-transform" />
+                                  
+                                  <div className="bg-muted/50 group-hover:bg-muted rounded-lg p-3 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-xs text-muted-foreground font-medium">
+                                        {new Date(h.created_at).toLocaleString("pt-BR")}
+                                      </p>
+                                      {h.status_evento && (
+                                        <Badge variant="outline" className="text-xs">
+                                          {h.status_evento}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    
+                                    <div className="text-sm space-y-1.5">
+                                      {h.tipo_evento && (
+                                        <div>
+                                          <span className="font-semibold text-foreground">
+                                            {h.tipo_evento.replace(/_/g, " ").toUpperCase()}
+                                          </span>
+                                        </div>
+                                      )}
+                                      
+                                      {h.observacao && (
+                                        <p className="text-muted-foreground">
+                                          {h.observacao}
+                                        </p>
+                                      )}
+                                      
+                                      <div className="flex gap-4 flex-wrap">
+                                        {h.valor_solicitado && (
+                                          <div>
+                                            <span className="text-xs text-muted-foreground">Valor Solicitado:</span>
+                                            <p className="font-semibold text-orange-600">
+                                              R$ {parseFloat(h.valor_solicitado).toFixed(2)}
+                                            </p>
+                                          </div>
+                                        )}
+                                        
+                                        {h.valor_final && (
+                                          <div>
+                                            <span className="text-xs text-muted-foreground">Valor Final:</span>
+                                            <p className="font-semibold text-green-600">
+                                              R$ {parseFloat(h.valor_final).toFixed(2)}
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      {h.comprovante_url && (
+                                        <a
+                                          href={h.comprovante_url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          📎 Ver comprovante
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))
                   )}
