@@ -43,19 +43,25 @@ const SuperAdmin = () => {
         return;
       }
 
-      const { data: roleData } = await supabase
+      const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", session.user.id)
-        .single();
+        .eq("user_id", session.user.id);
 
-      if (roleData?.role !== "admin") {
+      // Check if user has super_admin role
+      if (!roles || !roles.some(r => r.role === "super_admin")) {
         toast({
           title: "Acesso negado",
-          description: "Apenas administradores têm acesso",
+          description: "Apenas super administradores têm acesso a este painel",
           variant: "destructive"
         });
-        navigate("/");
+        
+        // If user is a regular admin, redirect to admin panel
+        if (roles && roles.some(r => r.role === "admin")) {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
         return;
       }
 
