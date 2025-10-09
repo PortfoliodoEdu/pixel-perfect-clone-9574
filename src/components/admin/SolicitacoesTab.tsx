@@ -350,7 +350,7 @@ export const SolicitacoesTab = () => {
                             variant="outline"
                             onClick={() => handleVisualizarClick(item)}
                           >
-                            Atualizar
+                            Responder
                           </Button>
                         </td>
                       </tr>
@@ -363,15 +363,30 @@ export const SolicitacoesTab = () => {
         )}
       </div>
 
-      {/* Dialog para atualizar solicitação */}
+      {/* Dialog para responder solicitação */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Atualizar Solicitação</DialogTitle>
+            <DialogTitle>Responder Solicitação</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {selectedSolicitacao && (
               <>
+                {/* Cabeçalho com tipo e data */}
+                <div className="bg-muted/50 rounded-lg p-4 space-y-1 border-l-4 border-primary">
+                  <div className="text-lg font-bold text-foreground">
+                    {getTipoLabel(selectedSolicitacao.tipo_solicitacao)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {format(new Date(selectedSolicitacao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </div>
+                  {selectedSolicitacao.descricao && (
+                    <div className="text-sm text-foreground mt-2">
+                      <span className="font-medium">Descrição: </span>
+                      {selectedSolicitacao.descricao}
+                    </div>
+                  )}
+                </div>
                 <div>
                   <Label>Observação para a Linha do Tempo</Label>
                   <div className="space-y-2">
@@ -434,7 +449,7 @@ export const SolicitacoesTab = () => {
                   disabled={updating}
                   className="w-full"
                 >
-                  {updating ? 'Salvando...' : 'Salvar Atualização'}
+                  {updating ? 'Salvando...' : 'Responder Solicitação'}
                 </Button>
               </>
             )}

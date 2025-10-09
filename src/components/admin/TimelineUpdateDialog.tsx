@@ -97,7 +97,7 @@ export const TimelineUpdateDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Atualizar Linha do Tempo</DialogTitle>
+          <DialogTitle>Responder</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
