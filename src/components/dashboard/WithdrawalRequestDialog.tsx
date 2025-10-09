@@ -34,14 +34,32 @@ export const WithdrawalRequestDialog = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
-      const { error } = await supabase.from("solicitacoes").insert({
-        user_id: user.id,
-        plano_adquirido_id: planId,
-        tipo_solicitacao: "saque",
-        descricao: `Solicitação de saque - Nome: ${formData.nomeCompleto}, CPF: ${formData.cpf}, Valor: R$ ${formData.valorSaque}`,
-      });
+      const { data: solicitacao, error } = await supabase
+        .from("solicitacoes")
+        .insert({
+          user_id: user.id,
+          plano_adquirido_id: planId,
+          tipo_solicitacao: "saque",
+          descricao: `Solicitação de saque - Nome: ${formData.nomeCompleto}, CPF: ${formData.cpf}, Valor: R$ ${formData.valorSaque}`,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Criar entrada automática na linha do tempo
+      const { error: historicoError } = await supabase
+        .from("historico_observacoes")
+        .insert({
+          plano_adquirido_id: planId,
+          solicitacao_id: solicitacao.id,
+          tipo_evento: "saque",
+          valor_solicitado: parseFloat(formData.valorSaque),
+          observacao: `Solicitação de saque de R$ ${formData.valorSaque}`,
+          status_evento: "pendente",
+        });
+
+      if (historicoError) throw historicoError;
 
       await AuditLogger.logWithdrawalRequest(parseFloat(formData.valorSaque));
       toast.success("Solicitação de saque enviada com sucesso!");

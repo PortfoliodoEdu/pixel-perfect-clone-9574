@@ -25,14 +25,31 @@ export const SecondChanceDialog = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
-      const { error } = await supabase.from("solicitacoes").insert({
-        user_id: user.id,
-        plano_adquirido_id: planId,
-        tipo_solicitacao: "segunda_chance",
-        descricao: "Solicitação de segunda chance no teste",
-      });
+      const { data: solicitacao, error } = await supabase
+        .from("solicitacoes")
+        .insert({
+          user_id: user.id,
+          plano_adquirido_id: planId,
+          tipo_solicitacao: "segunda_chance",
+          descricao: "Solicitação de segunda chance no teste",
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Criar entrada automática na linha do tempo
+      const { error: historicoError } = await supabase
+        .from("historico_observacoes")
+        .insert({
+          plano_adquirido_id: planId,
+          solicitacao_id: solicitacao.id,
+          tipo_evento: "segunda_chance",
+          observacao: "Solicitação de segunda chance no teste",
+          status_evento: "pendente",
+        });
+
+      if (historicoError) throw historicoError;
 
       await AuditLogger.logSecondChanceRequest();
       toast.success("Solicitação enviada com sucesso!");
