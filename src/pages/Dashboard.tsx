@@ -63,7 +63,7 @@ const Dashboard = () => {
       (event, session) => {
         setSession(session);
         if (session) {
-          loadUserData(session.user.id);
+          checkUserAccess(session.user.id);
         } else {
           toast.error("Sessão expirada. Por favor, faça login novamente.");
           navigate("/");
@@ -74,7 +74,7 @@ const Dashboard = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
-        loadUserData(session.user.id);
+        checkUserAccess(session.user.id);
       } else {
         toast.error("Acesso não autorizado. Por favor, faça login.");
         navigate("/");
@@ -83,6 +83,23 @@ const Dashboard = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const checkUserAccess = async (userId: string) => {
+    // Check if user is admin
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+
+    if (roles && roles.some(r => r.role === "admin")) {
+      toast.error("Administradores não têm acesso ao dashboard de traders.");
+      navigate("/admin");
+      return;
+    }
+
+    // If not admin, load user data
+    await loadUserData(userId);
+  };
 
   const loadUserData = async (userId: string) => {
     try {
