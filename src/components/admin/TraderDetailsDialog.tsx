@@ -3,11 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { FileText, Eye, Clock } from "lucide-react";
+import { FileText, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { AdminDocumentViewDialog } from "./AdminDocumentViewDialog";
 import { Badge } from "@/components/ui/badge";
-import { TimelineUpdateDialog } from "./TimelineUpdateDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface TraderDetailsDialogProps {
@@ -53,8 +52,6 @@ export const TraderDetailsDialog = ({
   const [loading, setLoading] = useState(true);
   const [viewDocument, setViewDocument] = useState<Document | null>(null);
   const [planosAdquiridos, setPlanosAdquiridos] = useState<any[]>([]);
-  const [selectedTimelineEntry, setSelectedTimelineEntry] = useState<any>(null);
-  const [timelineUpdateOpen, setTimelineUpdateOpen] = useState(false);
 
   useEffect(() => {
     if (open && traderId) {
@@ -118,15 +115,6 @@ export const TraderDetailsDialog = ({
     }
   };
 
-  const handleTimelineEntryClick = (entry: any) => {
-    setSelectedTimelineEntry(entry);
-    setTimelineUpdateOpen(true);
-  };
-
-  const reloadTimeline = async () => {
-    // Recarregar dados após atualização
-    await loadTraderData();
-  };
 
   const formatDate = (date: string | null) => {
     if (!date) return "-";
@@ -359,13 +347,12 @@ export const TraderDetailsDialog = ({
                               {plano.historico.map((h: any) => (
                                 <div
                                   key={h.id}
-                                  className="relative pl-6 pb-4 border-l-2 border-primary/30 hover:border-primary transition-colors cursor-pointer group"
-                                  onClick={() => handleTimelineEntryClick(h)}
+                                  className="relative pl-6 pb-4 border-l-2 border-primary/30"
                                 >
                                   {/* Bolinha na linha do tempo */}
-                                  <div className="absolute left-[-5px] top-1 w-3 h-3 rounded-full bg-primary group-hover:scale-125 transition-transform" />
+                                  <div className="absolute left-[-5px] top-1 w-3 h-3 rounded-full bg-primary" />
                                   
-                                  <div className="bg-muted/50 group-hover:bg-muted rounded-lg p-3 space-y-2">
+                                  <div className="bg-muted/50 rounded-lg p-3 space-y-2">
                                     <div className="flex items-center justify-between">
                                       <p className="text-xs text-muted-foreground font-medium">
                                         {new Date(h.created_at).toLocaleString("pt-BR")}
@@ -440,12 +427,6 @@ export const TraderDetailsDialog = ({
         </DialogContent>
       </Dialog>
 
-      <TimelineUpdateDialog
-        open={timelineUpdateOpen}
-        onOpenChange={setTimelineUpdateOpen}
-        timelineEntry={selectedTimelineEntry}
-        onUpdate={reloadTimeline}
-      />
 
       {viewDocument && (
         <AdminDocumentViewDialog
