@@ -428,10 +428,11 @@ const Dashboard = () => {
 
           {/* Plans Section */}
           <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-foreground">Planos adquiridos</h3>
+            <h3 className="text-[32px] font-bold text-foreground">Planos adquiridos</h3>
+            <div className="border-b border-border/30"></div>
 
             {planosAdquiridos.length === 0 ? (
-              <div className="bg-white rounded-lg p-8 text-center">
+              <div className="pt-32 pb-32 text-center">
                 <p className="text-foreground/70 text-base">Nenhum plano adquirido ainda</p>
               </div>
             ) : (
@@ -560,7 +561,7 @@ const Dashboard = () => {
 
             {/* Status da plataforma Section */}
             <div className="bg-white rounded-lg p-8 space-y-6">
-              <h3 className="text-3xl font-bold text-foreground">Status da plataforma</h3>
+              <h3 className="text-[32px] font-bold text-foreground">Status da plataforma</h3>
               <div className="flex items-center gap-3">
                 <span className="text-2xl">
                   {profile?.pagamento_ativo ? '🟩' : '🟥'}
@@ -572,24 +573,22 @@ const Dashboard = () => {
               {profile?.pagamento_ativo && (
                 <>
                   <div className="flex gap-3">
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8">
-                      ATIVAR PROFIT ONE
-                    </Button>
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8">
-                      ATIVAR PROFIT PRO
-                    </Button>
+                    <div className="flex flex-col items-start">
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8">
+                        ATIVAR PROFIT ONE
+                      </Button>
+                      <p className="text-[22px] font-bold text-foreground mt-2">R$ 90,00 por mês</p>
+                      <p className="text-xs text-foreground/70">Primeiro mês grátis para novos usuários</p>
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8">
+                        ATIVAR PROFIT PRO
+                      </Button>
+                      <p className="text-[22px] font-bold text-foreground mt-2">R$ 220,00 por mês</p>
+                    </div>
                     <Button className="bg-foreground hover:bg-foreground/90 text-white font-bold px-8">
                       DESATIVAR PLANO
                     </Button>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-bold text-foreground">R$ 90,00 por mês</p>
-                      <p className="text-sm text-foreground/70">Primeiro mês grátis para novos usuários</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-foreground">R$ 220,00 por mês</p>
-                    </div>
                   </div>
                 </>
               )}
@@ -606,7 +605,7 @@ const Dashboard = () => {
             <div className="bg-white rounded-lg p-8 space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-3xl font-bold text-foreground mb-2">Informações cadastrais</h3>
+                  <h3 className="text-[32px] font-bold text-foreground mb-2">Informações cadastrais</h3>
                   <p className="text-foreground/70">
                     Preencha todos os dados para que você não tenha nenhum problema ao solicitar um saque.
                   </p>
