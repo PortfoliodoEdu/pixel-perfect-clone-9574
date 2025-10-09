@@ -55,7 +55,7 @@ export const WithdrawalRequestDialog = ({
           solicitacao_id: solicitacao.id,
           tipo_evento: "saque",
           valor_solicitado: parseFloat(formData.valorSaque),
-          observacao: `Solicitação de saque de R$ ${formData.valorSaque}`,
+          observacao: `valor solicitado: R$ ${formData.valorSaque}`,
           status_evento: "pendente",
         });
 

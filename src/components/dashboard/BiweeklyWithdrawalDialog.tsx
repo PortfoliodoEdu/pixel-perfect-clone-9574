@@ -44,7 +44,7 @@ export const BiweeklyWithdrawalDialog = ({
           plano_adquirido_id: planId,
           solicitacao_id: solicitacao.id,
           tipo_evento: "saque_quinzenal",
-          observacao: "Solicitação de ativação de saque quinzenal",
+          observacao: "solicitado mudança para quinzenal",
           status_evento: "pendente",
         });
 

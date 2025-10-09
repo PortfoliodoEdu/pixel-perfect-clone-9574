@@ -45,7 +45,7 @@ export const SecondChanceDialog = ({
           plano_adquirido_id: planId,
           solicitacao_id: solicitacao.id,
           tipo_evento: "segunda_chance",
-          observacao: "Solicitação de segunda chance no teste",
+          observacao: "solicitado a segunda chance no teste",
           status_evento: "pendente",
         });
 
