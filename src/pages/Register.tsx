@@ -6,6 +6,7 @@ import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import logoImage from "@/assets/logo-prime-new.png";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -86,12 +87,11 @@ const Register = () => {
       {/* Header with gradient */}
       <header className="gradient-header px-8 py-8 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="bg-white rounded-full w-12 h-12 flex items-center justify-center">
-            <span className="text-primary font-bold text-xl italic">pi</span>
-          </div>
-          <h1 className="text-white text-3xl font-light">
-            prime<span className="font-light italic">capital</span>
-          </h1>
+          <img 
+            src={logoImage} 
+            alt="Prime Capital" 
+            className="h-12 w-auto object-contain"
+          />
         </div>
         <div className="flex items-center gap-3">
           <span className="text-white text-2xl font-bold">Painel do Trader</span>
