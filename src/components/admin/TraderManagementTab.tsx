@@ -31,6 +31,8 @@ export const TraderManagementTab = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [paymentFilter, setPaymentFilter] = useState<"all" | "active" | "inactive">("all");
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [traderPlans, setTraderPlans] = useState<any[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("");
   const itemsPerPage = 5;
 
   useEffect(() => {
@@ -55,6 +57,28 @@ export const TraderManagementTab = () => {
       toast.error("Erro ao carregar traders: " + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadTraderPlans = async (traderId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("planos_adquiridos")
+        .select(`
+          id,
+          id_carteira,
+          planos:plano_id(nome_plano)
+        `)
+        .eq("cliente_id", traderId)
+        .order("id_carteira");
+
+      if (error) throw error;
+      setTraderPlans(data || []);
+      setSelectedPlanId(data && data.length > 0 ? data[0].id : "");
+    } catch (error: any) {
+      console.error("Erro ao carregar planos:", error);
+      setTraderPlans([]);
+      setSelectedPlanId("");
     }
   };
 
@@ -130,23 +154,16 @@ export const TraderManagementTab = () => {
       return;
     }
 
+    if (!selectedPlanId) {
+      toast.error("Selecione um plano para adicionar o comentário");
+      return;
+    }
+
     try {
-      // Get the trader's plans
-      const { data: planos } = await supabase
-        .from("planos_adquiridos")
-        .select("id")
-        .eq("cliente_id", selectedTrader.id)
-        .limit(1);
-
-      if (!planos || planos.length === 0) {
-        toast.error("Trader não possui planos adquiridos");
-        return;
-      }
-
       const { error } = await supabase
         .from("historico_observacoes")
         .insert({
-          plano_adquirido_id: planos[0].id,
+          plano_adquirido_id: selectedPlanId,
           observacao: comment,
         });
 
@@ -224,7 +241,10 @@ export const TraderManagementTab = () => {
           {paginatedTraders.map((trader) => (
             <div
               key={trader.id}
-              onClick={() => setSelectedTrader(trader)}
+              onClick={() => {
+                setSelectedTrader(trader);
+                loadTraderPlans(trader.id);
+              }}
               className={`p-3 rounded-lg cursor-pointer transition-colors ${
                 selectedTrader?.id === trader.id
                   ? "bg-primary text-primary-foreground"
@@ -317,13 +337,35 @@ export const TraderManagementTab = () => {
             {/* Add Comment */}
             <div className="space-y-3">
               <Label className="text-base font-medium">Adicionar Comentário</Label>
-              <Textarea
-                placeholder="Digite um comentário sobre o trader..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                rows={4}
-              />
-              <Button onClick={handleAddComment}>Adicionar Comentário</Button>
+              
+              {traderPlans.length > 0 ? (
+                <>
+                  <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="Selecione o plano" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      {traderPlans.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                          {plan.id_carteira} - {plan.planos?.nome_plano || 'Sem nome'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Textarea
+                    placeholder="Digite um comentário sobre o plano..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    rows={4}
+                  />
+                  <Button onClick={handleAddComment}>Adicionar Comentário</Button>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Este trader não possui planos adquiridos
+                </p>
+              )}
             </div>
           </>
         ) : (
