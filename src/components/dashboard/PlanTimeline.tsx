@@ -41,46 +41,63 @@ export const PlanTimeline = ({ entries }: PlanTimelineProps) => {
     return statusMap[status] || status;
   };
 
+  const getEventLabel = (tipoEvento: string) => {
+    if (tipoEvento === 'aprovacao_solicitada') {
+      return 'Aprovação solicitada';
+    }
+    return null;
+  };
+
   return (
     <div className="text-sm text-foreground space-y-2">
-      {entries.map((entry) => (
-        <div key={entry.id} className="flex items-start gap-2">
-          <span className="font-medium shrink-0">
-            {new Date(entry.created_at).toLocaleDateString('pt-BR')}
-          </span>
-          <span className="shrink-0">|</span>
-          <div className="flex items-center gap-2 flex-wrap">
-            {entry.valor_solicitado && (
-              <>
-                <span>Valor solicitado: {formatCurrency(entry.valor_solicitado)}</span>
-                <span>|</span>
-              </>
-            )}
-            {entry.valor_final && (
-              <>
-                <span>Valor final: {formatCurrency(entry.valor_final)}</span>
-                <span>|</span>
-              </>
-            )}
-            <span>Status: <span className="font-bold">{getStatusLabel(entry.status_evento)}</span></span>
-            {entry.comprovante_url && (
-              <>
-                <span>|</span>
-                <span>Comprovante</span>
-                <a 
-                  href={entry.comprovante_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center hover:opacity-70"
-                  title="Ver comprovante"
-                >
-                  <FileDown className="w-4 h-4" />
-                </a>
-              </>
-            )}
+      {entries.map((entry) => {
+        const eventLabel = getEventLabel(entry.tipo_evento);
+        
+        return (
+          <div key={entry.id} className="flex items-start gap-2">
+            <span className="font-medium shrink-0">
+              {new Date(entry.created_at).toLocaleDateString('pt-BR')}
+            </span>
+            <span className="shrink-0">|</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {eventLabel && (
+                <>
+                  <span>{eventLabel}</span>
+                  <span>|</span>
+                </>
+              )}
+              {entry.valor_solicitado && (
+                <>
+                  <span>Valor solicitado: {formatCurrency(entry.valor_solicitado)}</span>
+                  <span>|</span>
+                </>
+              )}
+              {entry.valor_final && (
+                <>
+                  <span>Valor final: {formatCurrency(entry.valor_final)}</span>
+                  <span>|</span>
+                </>
+              )}
+              <span>Status: <span className="font-bold">{getStatusLabel(entry.status_evento)}</span></span>
+              {entry.comprovante_url && (
+                <>
+                  <span>|</span>
+                  <span>Comprovante</span>
+                  <a 
+                    href={entry.comprovante_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center hover:opacity-70"
+                    title="Ver comprovante"
+                  >
+                    <FileDown className="w-4 h-4" />
+                  </a>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

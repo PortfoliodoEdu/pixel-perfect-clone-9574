@@ -24,14 +24,31 @@ export const ApprovalRequestDialog = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
-      const { error } = await supabase.from("solicitacoes").insert({
-        user_id: user.id,
-        plano_adquirido_id: planoId,
-        tipo_solicitacao: "outro",
-        descricao: "Solicitação de aprovação no teste",
-      });
+      const { data: solicitacao, error } = await supabase
+        .from("solicitacoes")
+        .insert({
+          user_id: user.id,
+          plano_adquirido_id: planoId,
+          tipo_solicitacao: "outro",
+          descricao: "Solicitação de aprovação no teste",
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Criar entrada no histórico
+      const { error: historicoError } = await supabase
+        .from("historico_observacoes")
+        .insert({
+          plano_adquirido_id: planoId,
+          solicitacao_id: solicitacao.id,
+          tipo_evento: "aprovacao_solicitada",
+          observacao: "Aprovação solicitada",
+          status_evento: "aprovado",
+        });
+
+      if (historicoError) throw historicoError;
 
       toast.success("Solicitação enviada com sucesso!");
       onOpenChange(false);
