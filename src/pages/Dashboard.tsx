@@ -561,17 +561,24 @@ const Dashboard = () => {
 
             {/* Status da plataforma Section */}
             <div className="bg-white rounded-lg p-8 space-y-6">
-              <h3 className="text-[32px] font-bold text-foreground">Status da plataforma</h3>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">
-                  {profile?.pagamento_ativo ? '🟩' : '🟥'}
-                </span>
-                <span className="text-foreground">
-                  {profile?.pagamento_ativo ? 'A plataforma está ativa' : 'A plataforma não está ativa'}
-                </span>
+              <div>
+                <h3 className="text-[32px] font-bold text-foreground">Status da plataforma</h3>
+                <div className="border-b border-border/30 mt-2"></div>
               </div>
-              {profile?.pagamento_ativo && (
-                <>
+              
+              <div className="flex items-start justify-between gap-6">
+                {/* Status indicator on the left */}
+                <div className="flex items-center gap-3 pt-2">
+                  <span className="text-2xl">
+                    {profile?.pagamento_ativo ? '🟩' : '🟥'}
+                  </span>
+                  <span className="text-foreground">
+                    {profile?.pagamento_ativo ? 'A plataforma está ativa' : 'A plataforma não está ativa'}
+                  </span>
+                </div>
+
+                {/* Buttons on the right */}
+                {profile?.pagamento_ativo && (
                   <div className="flex gap-3">
                     <div className="flex flex-col items-start">
                       <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8">
@@ -590,8 +597,9 @@ const Dashboard = () => {
                       DESATIVAR PLANO
                     </Button>
                   </div>
-                </>
-              )}
+                )}
+              </div>
+              
               {!profile?.pagamento_ativo && (
                 <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
                   <p className="text-sm text-destructive font-medium">
@@ -606,6 +614,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-[32px] font-bold text-foreground mb-2">Informações cadastrais</h3>
+                  <div className="border-b border-border/30"></div>
                   <p className="text-foreground/70">
                     Preencha todos os dados para que você não tenha nenhum problema ao solicitar um saque.
                   </p>
