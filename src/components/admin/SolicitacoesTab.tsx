@@ -365,7 +365,7 @@ export const SolicitacoesTab = () => {
 
       {/* Dialog para atualizar solicitação */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Atualizar Solicitação</DialogTitle>
           </DialogHeader>
@@ -373,46 +373,22 @@ export const SolicitacoesTab = () => {
             {selectedSolicitacao && (
               <>
                 <div>
-                  <Label className="text-sm font-medium">Trader</Label>
-                  <p className="text-sm">{selectedSolicitacao.profiles?.nome}</p>
+                  <Label>Mensagens Rápidas</Label>
+                  <Select onValueChange={(value) => setObservacaoTimeline(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma mensagem padrão..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Aprovação solicitada">Aprovação solicitada</SelectItem>
+                      <SelectItem value="Segunda chance aprovada">Segunda chance aprovada</SelectItem>
+                      <SelectItem value="Saque aprovado">Saque aprovado</SelectItem>
+                      <SelectItem value="Saque efetuado">Saque efetuado</SelectItem>
+                      <SelectItem value="Solicitação em análise">Solicitação em análise</SelectItem>
+                      <SelectItem value="Documentação pendente">Documentação pendente</SelectItem>
+                      <SelectItem value="Aguardando aprovação">Aguardando aprovação</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-
-                <div>
-                  <Label className="text-sm font-medium">Tipo</Label>
-                  <p className="text-sm">{getTipoLabel(selectedSolicitacao.tipo_solicitacao)}</p>
-                </div>
-
-                <div>
-                  <Label className="text-sm font-medium">Descrição Original</Label>
-                  <p className="text-sm text-muted-foreground">{selectedSolicitacao.descricao || '-'}</p>
-                </div>
-
-                {selectedSolicitacao.tipo_solicitacao === 'saque' && (
-                  <>
-                    <div>
-                      <Label className="text-sm font-medium">Valor Solicitado</Label>
-                      <Input
-                        type="text"
-                        value={selectedSolicitacao.descricao ? 
-                          new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(selectedSolicitacao.descricao)) 
-                          : '-'}
-                        disabled
-                        className="bg-muted"
-                      />
-                    </div>
-
-                    <div>
-                      <Label>Valor Final</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={valorFinal}
-                        onChange={(e) => setValorFinal(e.target.value)}
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </>
-                )}
 
                 <div>
                   <Label>Observação para a Linha do Tempo</Label>
@@ -420,55 +396,39 @@ export const SolicitacoesTab = () => {
                     type="text"
                     value={observacaoTimeline}
                     onChange={(e) => setObservacaoTimeline(e.target.value)}
-                    placeholder="Ex: Aprovação solicitada, Segunda chance aprovada, etc."
+                    placeholder="Digite uma observação personalizada..."
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Esta mensagem aparecerá na linha do tempo do plano do trader
-                  </p>
                 </div>
 
                 <div>
                   <Label>Status</Label>
-                  <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pendente">Pendente</SelectItem>
-                      <SelectItem value="aprovado">Aprovado</SelectItem>
-                      <SelectItem value="efetuado">Efetuado</SelectItem>
-                      <SelectItem value="atendida">Atendida</SelectItem>
-                      <SelectItem value="recusado">Recusado</SelectItem>
-                      <SelectItem value="rejeitada">Rejeitada</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {(status === "efetuado" || selectedSolicitacao.tipo_solicitacao === 'saque') && (
-                  <div>
-                    <Label>Comprovante</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="file"
-                        onChange={handleFileUpload}
-                        disabled={uploading}
-                        accept=".pdf,.jpg,.jpeg,.png"
-                      />
-                      {uploading && <span className="text-sm text-muted-foreground">Enviando...</span>}
-                    </div>
-                    {comprovanteUrl && (
-                      <a 
-                        href={comprovanteUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline flex items-center gap-1 mt-2"
-                      >
-                        <Upload className="w-3 h-3" />
-                        Ver comprovante anexado
-                      </a>
-                    )}
+                  <div className="space-y-2">
+                    <Select value={status} onValueChange={setStatus}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pendente">Pendente</SelectItem>
+                        <SelectItem value="aprovado">Aprovado</SelectItem>
+                        <SelectItem value="efetuado">Efetuado</SelectItem>
+                        <SelectItem value="atendida">Atendida</SelectItem>
+                        <SelectItem value="recusado">Recusado</SelectItem>
+                        <SelectItem value="rejeitada">Rejeitada</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="text"
+                      placeholder="Ou digite um status customizado..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && e.currentTarget.value) {
+                          setStatus(e.currentTarget.value.toLowerCase());
+                          e.currentTarget.value = '';
+                        }
+                      }}
+                      className="text-sm"
+                    />
                   </div>
-                )}
+                </div>
 
                 <Button 
                   onClick={handleUpdateSolicitacao} 
