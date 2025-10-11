@@ -34,6 +34,7 @@ export const SolicitacoesTab = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [valorFinal, setValorFinal] = useState("");
   const [status, setStatus] = useState("pendente");
+  const [customStatus, setCustomStatus] = useState("");
   const [uploading, setUploading] = useState(false);
   const [comprovanteUrl, setComprovanteUrl] = useState("");
   const [updating, setUpdating] = useState(false);
@@ -130,6 +131,7 @@ export const SolicitacoesTab = () => {
     setSelectedSolicitacao(solicitacao);
     setValorFinal("");
     setStatus("pendente");
+    setCustomStatus("");
     setComprovanteUrl("");
     setObservacaoTimeline("");
     setDialogOpen(true);
@@ -187,10 +189,11 @@ export const SolicitacoesTab = () => {
       }
 
       // Atualizar a solicitação (trigger irá atualizar automaticamente o histórico)
+      const finalStatus = customStatus || status;
       const { error: solicitacaoError } = await supabase
         .from('solicitacoes')
         .update({
-          status: status,
+          status: finalStatus,
           resposta_admin: observacaoTimeline || (valorFinal ? `Valor final: R$ ${valorFinal}` : null)
         })
         .eq('id', selectedSolicitacao.id);
@@ -421,13 +424,8 @@ export const SolicitacoesTab = () => {
                     <Input
                       type="text"
                       placeholder="Ou digite um status customizado..."
-                      value=""
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && e.currentTarget.value) {
-                          setStatus(e.currentTarget.value.toLowerCase());
-                          e.currentTarget.value = '';
-                        }
-                      }}
+                      value={customStatus}
+                      onChange={(e) => setCustomStatus(e.target.value)}
                       className="text-sm"
                     />
                   </div>
