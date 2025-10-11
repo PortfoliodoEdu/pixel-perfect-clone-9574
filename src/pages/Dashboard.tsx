@@ -479,9 +479,12 @@ const Dashboard = () => {
                           <span className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-white border border-border text-foreground font-bold text-sm">
                             {plano.tipo_saque === 'mensal' ? '30' : '15'}
                           </span>
-                          <span className="text-foreground/50 text-xs">
+                          <button
+                            onClick={() => plano.tipo_saque === 'mensal' ? openDialog('biweekly', plano.id) : null}
+                            className={`text-foreground/50 text-xs hover:text-primary hover:underline ${plano.tipo_saque === 'mensal' ? 'cursor-pointer' : 'cursor-default'}`}
+                          >
                             mudar para {plano.tipo_saque === 'mensal' ? 'quinzenal' : 'mensal'}
-                          </span>
+                          </button>
                         </div>
 
                         {/* Solicitações - Action Buttons */}
