@@ -53,6 +53,14 @@ export const PlanTimeline = ({ entries }: PlanTimelineProps) => {
       {entries.map((entry) => {
         const eventLabel = getEventLabel(entry.tipo_evento);
         
+        // Determinar o conteúdo a exibir: observacao ou tipo_evento
+        const displayText = entry.observacao || eventLabel;
+        
+        // Não exibir a entrada se não houver conteúdo significativo
+        if (!displayText && !entry.valor_solicitado && !entry.valor_final && !entry.comprovante_url) {
+          return null;
+        }
+        
         return (
           <div key={entry.id} className="flex items-start gap-2">
             <span className="font-medium shrink-0">
@@ -60,9 +68,9 @@ export const PlanTimeline = ({ entries }: PlanTimelineProps) => {
             </span>
             <span className="shrink-0">|</span>
             <div className="flex items-center gap-2 flex-wrap">
-              {eventLabel && (
+              {displayText && (
                 <>
-                  <span>{eventLabel}</span>
+                  <span>{displayText}</span>
                   <span>|</span>
                 </>
               )}
