@@ -24,31 +24,16 @@ export const BiweeklyWithdrawalDialog = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
-      const { data: solicitacao, error } = await supabase
+      const { error } = await supabase
         .from("solicitacoes")
         .insert({
           user_id: user.id,
           plano_adquirido_id: planId,
           tipo_solicitacao: "saque_quinzenal",
           descricao: "Solicitação de ativação de saque quinzenal",
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Criar entrada automática na linha do tempo
-      const { error: historicoError } = await supabase
-        .from("historico_observacoes")
-        .insert({
-          plano_adquirido_id: planId,
-          solicitacao_id: solicitacao.id,
-          tipo_evento: "saque_quinzenal",
-          observacao: "solicitado mudança para quinzenal",
-          status_evento: "pendente",
         });
 
-      if (historicoError) throw historicoError;
+      if (error) throw error;
 
       await AuditLogger.logBiweeklyWithdrawalRequest();
       toast.success("Solicitação enviada com sucesso!");
