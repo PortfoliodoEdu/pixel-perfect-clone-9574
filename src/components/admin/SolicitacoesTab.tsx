@@ -171,28 +171,7 @@ export const SolicitacoesTab = () => {
     try {
       setUpdating(true);
 
-      // Inserir nova entrada no histórico com dados do admin (se houver valor_final ou comprovante)
-      // A trigger já vai inserir a observação, mas aqui adicionamos os extras se necessário
-      if (valorFinal || comprovanteUrl) {
-        // Atualizar a entrada que a trigger vai criar com valor_final e comprovante
-        // Fazemos isso após a atualização da solicitação
-        await new Promise(resolve => setTimeout(resolve, 100)); // Pequeno delay para garantir que a trigger execute
-        
-        const { error: historicoError } = await supabase
-          .from('historico_observacoes')
-          .update({
-            valor_final: valorFinal ? parseFloat(valorFinal) : null,
-            comprovante_url: comprovanteUrl || null,
-          })
-          .eq('solicitacao_id', selectedSolicitacao.id)
-          .eq('origem', 'admin')
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (historicoError) throw historicoError;
-      }
-
-      // Atualizar a solicitação (trigger irá atualizar automaticamente o histórico)
+      // Atualizar a solicitação (trigger irá INSERIR nova entrada no histórico)
       const { error: solicitacaoError } = await supabase
         .from('solicitacoes')
         .update({
@@ -202,6 +181,35 @@ export const SolicitacoesTab = () => {
         .eq('id', selectedSolicitacao.id);
 
       if (solicitacaoError) throw solicitacaoError;
+
+      // Anexar extras (valor_final/comprovante) na última entrada criada pela trigger
+      if (valorFinal || comprovanteUrl) {
+        // Garantir que a trigger executou
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const { data: ultima, error: selectErr } = await supabase
+          .from('historico_observacoes')
+          .select('id')
+          .eq('solicitacao_id', selectedSolicitacao.id)
+          .eq('origem', 'admin')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (selectErr) throw selectErr;
+
+        if (ultima?.id) {
+          const { error: historicoError } = await supabase
+            .from('historico_observacoes')
+            .update({
+              valor_final: valorFinal ? parseFloat(valorFinal) : null,
+              comprovante_url: comprovanteUrl || null,
+            })
+            .eq('id', ultima.id);
+
+          if (historicoError) throw historicoError;
+        }
+      }
 
       toast.success("Solicitação atualizada com sucesso!");
       setDialogOpen(false);

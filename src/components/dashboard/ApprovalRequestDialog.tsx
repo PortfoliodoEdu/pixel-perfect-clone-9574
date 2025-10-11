@@ -37,18 +37,6 @@ export const ApprovalRequestDialog = ({
 
       if (error) throw error;
 
-      // Criar entrada no histórico
-      const { error: historicoError } = await supabase
-        .from("historico_observacoes")
-        .insert({
-          plano_adquirido_id: planoId,
-          solicitacao_id: solicitacao.id,
-          tipo_evento: "aprovacao_solicitada",
-          observacao: "Aprovação solicitada",
-          status_evento: "aprovado",
-        });
-
-      if (historicoError) throw historicoError;
 
       toast.success("Solicitação enviada com sucesso!");
       onOpenChange(false);

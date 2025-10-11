@@ -38,18 +38,6 @@ export const SecondChanceDialog = ({
 
       if (error) throw error;
 
-      // Criar entrada automática na linha do tempo
-      const { error: historicoError } = await supabase
-        .from("historico_observacoes")
-        .insert({
-          plano_adquirido_id: planId,
-          solicitacao_id: solicitacao.id,
-          tipo_evento: "segunda_chance",
-          observacao: "solicitado a segunda chance no teste",
-          status_evento: "pendente",
-        });
-
-      if (historicoError) throw historicoError;
 
       await AuditLogger.logSecondChanceRequest();
       toast.success("Solicitação enviada com sucesso!");

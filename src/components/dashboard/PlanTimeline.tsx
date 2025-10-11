@@ -72,7 +72,7 @@ export const PlanTimeline = ({ entries }: PlanTimelineProps) => {
             <span className="shrink-0">|</span>
             {isAdmin && (
               <>
-                <span className="shrink-0 text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                <span className="shrink-0 text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">
                   ADMIN
                 </span>
                 <span className="shrink-0">|</span>
