@@ -70,14 +70,6 @@ export const PlanTimeline = ({ entries }: PlanTimelineProps) => {
               {new Date(entry.created_at).toLocaleDateString('pt-BR')}
             </span>
             <span className="shrink-0">|</span>
-            {isAdmin && (
-              <>
-                <span className="shrink-0 text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">
-                  ADMIN
-                </span>
-                <span className="shrink-0">|</span>
-              </>
-            )}
             <div className="flex items-center gap-2 flex-wrap">
               {displayText && (
                 <>
