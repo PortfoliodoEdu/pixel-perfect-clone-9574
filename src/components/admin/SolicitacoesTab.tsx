@@ -171,7 +171,22 @@ export const SolicitacoesTab = () => {
     try {
       setUpdating(true);
 
-      // Atualizar a solicitação
+      // Atualizar apenas o histórico com os campos extras (valor_final e comprovante)
+      // A trigger update_timeline_entry_on_request já atualiza status_evento e observacao
+      if (valorFinal || comprovanteUrl) {
+        const { error: historicoError } = await supabase
+          .from('historico_observacoes')
+          .update({
+            valor_final: valorFinal ? parseFloat(valorFinal) : null,
+            comprovante_url: comprovanteUrl || null,
+          })
+          .eq('solicitacao_id', selectedSolicitacao.id)
+          .eq('plano_adquirido_id', selectedSolicitacao.plano_adquirido_id);
+
+        if (historicoError) throw historicoError;
+      }
+
+      // Atualizar a solicitação (trigger irá atualizar automaticamente o histórico)
       const { error: solicitacaoError } = await supabase
         .from('solicitacoes')
         .update({
@@ -181,43 +196,6 @@ export const SolicitacoesTab = () => {
         .eq('id', selectedSolicitacao.id);
 
       if (solicitacaoError) throw solicitacaoError;
-
-      // Criar ou atualizar o histórico relacionado
-      const { data: historicoData } = await supabase
-        .from('historico_observacoes')
-        .select('id, observacao')
-        .eq('solicitacao_id', selectedSolicitacao.id)
-        .maybeSingle();
-
-      if (historicoData) {
-        // Atualizar histórico existente
-        const { error: historicoError } = await supabase
-          .from('historico_observacoes')
-          .update({
-            valor_final: valorFinal ? parseFloat(valorFinal) : null,
-            status_evento: status,
-            comprovante_url: comprovanteUrl || null,
-            observacao: observacaoTimeline || historicoData.observacao || '',
-          })
-          .eq('id', historicoData.id);
-
-        if (historicoError) throw historicoError;
-      } else if (selectedSolicitacao.plano_adquirido_id) {
-        // Criar novo histórico se não existir
-        const { error: historicoError } = await supabase
-          .from('historico_observacoes')
-          .insert({
-            plano_adquirido_id: selectedSolicitacao.plano_adquirido_id,
-            solicitacao_id: selectedSolicitacao.id,
-            tipo_evento: selectedSolicitacao.tipo_solicitacao,
-            observacao: observacaoTimeline || selectedSolicitacao.descricao || '',
-            valor_final: valorFinal ? parseFloat(valorFinal) : null,
-            status_evento: status,
-            comprovante_url: comprovanteUrl || null,
-          });
-
-        if (historicoError) throw historicoError;
-      }
 
       toast.success("Solicitação atualizada com sucesso!");
       setDialogOpen(false);
