@@ -28,12 +28,52 @@ const Register = () => {
     confirmPassword: "",
   });
 
+  const validarCPF = (cpf: string): boolean => {
+    const digits = cpf.replace(/\D/g, '');
+    if (digits.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(digits)) return false; // todos iguais -> inválido
+    
+    const nums = digits.slice(0, 9).split('').map(Number);
+    
+    // Primeiro dígito
+    let s = 0;
+    for (let i = 0; i < 9; i++) s += nums[i] * (10 - i);
+    let r = s % 11;
+    let d1 = 11 - r;
+    if (d1 >= 10) d1 = 0;
+    
+    // Segundo dígito
+    nums.push(d1);
+    let s2 = 0;
+    for (let i = 0; i < 10; i++) s2 += nums[i] * (11 - i);
+    let r2 = s2 % 11;
+    let d2 = 11 - r2;
+    if (d2 >= 10) d2 = 0;
+    
+    return digits.slice(9) === `${d1}${d2}`;
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     if (formData.password !== formData.confirmPassword) {
       toast.error("As senhas não coincidem");
+      setLoading(false);
+      return;
+    }
+
+    // Validar CPF
+    if (!validarCPF(formData.cpf)) {
+      toast.error("CPF inválido");
+      setLoading(false);
+      return;
+    }
+
+    // Validar telefone
+    const telefoneDigits = formData.telefone.replace(/\D/g, '');
+    if (telefoneDigits.length > 11) {
+      toast.error("Telefone deve ter no máximo 11 dígitos");
       setLoading(false);
       return;
     }
@@ -158,7 +198,12 @@ const Register = () => {
                     type="tel"
                     required
                     value={formData.telefone}
-                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, '');
+                      if (digits.length <= 11) {
+                        setFormData({ ...formData, telefone: e.target.value });
+                      }
+                    }}
                     className="h-14 text-base border-input bg-muted/50"
                     placeholder="(00) 00000-0000"
                   />
