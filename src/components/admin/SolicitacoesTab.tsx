@@ -171,9 +171,13 @@ export const SolicitacoesTab = () => {
     try {
       setUpdating(true);
 
-      // Atualizar apenas o histórico com os campos extras (valor_final e comprovante)
-      // A trigger update_timeline_entry_on_request já atualiza status_evento e observacao
+      // Inserir nova entrada no histórico com dados do admin (se houver valor_final ou comprovante)
+      // A trigger já vai inserir a observação, mas aqui adicionamos os extras se necessário
       if (valorFinal || comprovanteUrl) {
+        // Atualizar a entrada que a trigger vai criar com valor_final e comprovante
+        // Fazemos isso após a atualização da solicitação
+        await new Promise(resolve => setTimeout(resolve, 100)); // Pequeno delay para garantir que a trigger execute
+        
         const { error: historicoError } = await supabase
           .from('historico_observacoes')
           .update({
@@ -181,7 +185,9 @@ export const SolicitacoesTab = () => {
             comprovante_url: comprovanteUrl || null,
           })
           .eq('solicitacao_id', selectedSolicitacao.id)
-          .eq('plano_adquirido_id', selectedSolicitacao.plano_adquirido_id);
+          .eq('origem', 'admin')
+          .order('created_at', { ascending: false })
+          .limit(1);
 
         if (historicoError) throw historicoError;
       }

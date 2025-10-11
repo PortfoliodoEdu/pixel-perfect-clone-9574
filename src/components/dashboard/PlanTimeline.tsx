@@ -9,6 +9,7 @@ interface TimelineEntry {
   status_evento: string;
   comprovante_url: string | null;
   observacao: string;
+  origem?: string;
 }
 
 interface PlanTimelineProps {
@@ -61,16 +62,26 @@ export const PlanTimeline = ({ entries }: PlanTimelineProps) => {
           return null;
         }
         
+        const isAdmin = entry.origem === 'admin';
+        
         return (
           <div key={entry.id} className="flex items-start gap-2">
             <span className="font-medium shrink-0">
               {new Date(entry.created_at).toLocaleDateString('pt-BR')}
             </span>
             <span className="shrink-0">|</span>
+            {isAdmin && (
+              <>
+                <span className="shrink-0 text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                  ADMIN
+                </span>
+                <span className="shrink-0">|</span>
+              </>
+            )}
             <div className="flex items-center gap-2 flex-wrap">
               {displayText && (
                 <>
-                  <span>{displayText}</span>
+                  <span className={isAdmin ? "font-medium" : ""}>{displayText}</span>
                   <span>|</span>
                 </>
               )}

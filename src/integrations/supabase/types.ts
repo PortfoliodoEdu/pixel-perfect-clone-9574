@@ -20,6 +20,7 @@ export type Database = {
           created_at: string | null
           id: string
           observacao: string
+          origem: string | null
           plano_adquirido_id: string
           solicitacao_id: string | null
           status_evento: string | null
@@ -32,6 +33,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           observacao: string
+          origem?: string | null
           plano_adquirido_id: string
           solicitacao_id?: string | null
           status_evento?: string | null
@@ -44,6 +46,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           observacao?: string
+          origem?: string | null
           plano_adquirido_id?: string
           solicitacao_id?: string | null
           status_evento?: string | null
