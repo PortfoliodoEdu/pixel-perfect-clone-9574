@@ -248,11 +248,14 @@ const PlanosAdquiridosTab = () => {
           }
         }}>
           <DialogTrigger asChild>
-            <Button onClick={() => { 
-              setEditingPlano(null); 
-              setFormData({ cliente_id: "", plano_id: "", status_plano: "ativo", tipo_saque: "mensal", id_carteira: "" });
-              setClienteOpen(false);
-            }}>
+            <Button 
+              type="button"
+              onClick={() => { 
+                setEditingPlano(null); 
+                setFormData({ cliente_id: "", plano_id: "", status_plano: "ativo", tipo_saque: "mensal", id_carteira: "" });
+                setClienteOpen(false);
+              }}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Atribuir Plano
             </Button>
