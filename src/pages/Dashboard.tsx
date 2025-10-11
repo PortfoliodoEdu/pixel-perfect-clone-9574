@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Pencil, Check, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Pencil, Check, Eye, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { DocumentViewDialog } from "@/components/dashboard/DocumentViewDialog";
 import iconsRecomecar from "@/assets/icons-recomecar.png";
 import iconsSaque from "@/assets/icons-saque.png";
@@ -57,6 +57,8 @@ const Dashboard = () => {
   const user = session?.user || null;
   const cnhInputRef = useRef<HTMLInputElement>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const REFRESH_INTERVAL = 30000; // 30 segundos
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -83,6 +85,19 @@ const Dashboard = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Auto-refresh para verificar novas atualizações
+  useEffect(() => {
+    if (!user) return;
+
+    const intervalId = setInterval(async () => {
+      setIsRefreshing(true);
+      await loadUserData(user.id);
+      setIsRefreshing(false);
+    }, REFRESH_INTERVAL);
+
+    return () => clearInterval(intervalId);
+  }, [user]);
 
   const checkUserAccess = async (userId: string) => {
     // Check if user is admin
@@ -428,9 +443,15 @@ const Dashboard = () => {
 
           {/* Plans Section */}
           <div className="space-y-6">
-            <div>
-              <h3 className="text-[32px] font-bold text-foreground">Planos adquiridos</h3>
-              <div className="border-b border-border/30 mt-2"></div>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h3 className="text-[32px] font-bold text-foreground">Planos adquiridos</h3>
+                <div className="border-b border-border/30 mt-2"></div>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground ml-4">
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span>Atualizando a cada 30s</span>
+              </div>
             </div>
 
             {planosAdquiridos.length === 0 ? (
