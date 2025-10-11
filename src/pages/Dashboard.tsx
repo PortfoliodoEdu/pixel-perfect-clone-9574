@@ -86,18 +86,23 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Auto-refresh para verificar novas atualizações
+  // Auto-refresh para verificar novas atualizações (pausa quando há dialogs abertos)
   useEffect(() => {
     if (!user) return;
 
     const intervalId = setInterval(async () => {
+      // Não atualizar se houver algum diálogo aberto
+      if (activeDialog.type || isEditing) {
+        return;
+      }
+      
       setIsRefreshing(true);
       await loadUserData(user.id);
       setIsRefreshing(false);
     }, REFRESH_INTERVAL);
 
     return () => clearInterval(intervalId);
-  }, [user]);
+  }, [user, activeDialog.type, isEditing]);
 
   const checkUserAccess = async (userId: string) => {
     // Check if user is admin
