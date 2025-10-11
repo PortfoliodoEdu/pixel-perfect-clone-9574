@@ -34,7 +34,6 @@ export const SolicitacoesTab = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [valorFinal, setValorFinal] = useState("");
   const [status, setStatus] = useState("pendente");
-  const [customStatus, setCustomStatus] = useState("");
   const [uploading, setUploading] = useState(false);
   const [comprovanteUrl, setComprovanteUrl] = useState("");
   const [updating, setUpdating] = useState(false);
@@ -131,7 +130,6 @@ export const SolicitacoesTab = () => {
     setSelectedSolicitacao(solicitacao);
     setValorFinal("");
     setStatus("pendente");
-    setCustomStatus("");
     setComprovanteUrl("");
     setObservacaoTimeline("");
     setDialogOpen(true);
@@ -189,11 +187,10 @@ export const SolicitacoesTab = () => {
       }
 
       // Atualizar a solicitação (trigger irá atualizar automaticamente o histórico)
-      const finalStatus = customStatus || status;
       const { error: solicitacaoError } = await supabase
         .from('solicitacoes')
         .update({
-          status: finalStatus,
+          status: status,
           resposta_admin: observacaoTimeline || (valorFinal ? `Valor final: R$ ${valorFinal}` : null)
         })
         .eq('id', selectedSolicitacao.id);
@@ -380,55 +377,44 @@ export const SolicitacoesTab = () => {
                   )}
                 </div>
                 <div>
-                  <Label>Observação para a Linha do Tempo</Label>
-                  <div className="space-y-2">
-                    <Select onValueChange={(value) => setObservacaoTimeline(value)} value="">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma mensagem padrão..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Aprovação solicitada">Aprovação solicitada</SelectItem>
-                        <SelectItem value="Segunda chance aprovada">Segunda chance aprovada</SelectItem>
-                        <SelectItem value="Saque aprovado">Saque aprovado</SelectItem>
-                        <SelectItem value="Saque efetuado">Saque efetuado</SelectItem>
-                        <SelectItem value="Solicitação em análise">Solicitação em análise</SelectItem>
-                        <SelectItem value="Documentação pendente">Documentação pendente</SelectItem>
-                        <SelectItem value="Aguardando aprovação">Aguardando aprovação</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      type="text"
-                      value={observacaoTimeline}
-                      onChange={(e) => setObservacaoTimeline(e.target.value)}
-                      placeholder="Ou digite uma observação personalizada..."
-                    />
-                  </div>
+                  <Label htmlFor="observacao-timeline">Observação para a Linha do Tempo</Label>
+                  <Input
+                    list="observacoes-predefinidas"
+                    id="observacao-timeline"
+                    value={observacaoTimeline}
+                    onChange={(e) => setObservacaoTimeline(e.target.value)}
+                    placeholder="Selecione ou digite uma observação..."
+                    className="mt-2"
+                  />
+                  <datalist id="observacoes-predefinidas">
+                    <option value="Aprovação solicitada" />
+                    <option value="Segunda chance aprovada" />
+                    <option value="Saque aprovado" />
+                    <option value="Saque efetuado" />
+                    <option value="Solicitação em análise" />
+                    <option value="Documentação pendente" />
+                    <option value="Aguardando aprovação" />
+                  </datalist>
                 </div>
 
                 <div>
-                  <Label>Status</Label>
-                  <div className="space-y-2">
-                    <Select value={status} onValueChange={setStatus}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um status..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pendente">Pendente</SelectItem>
-                        <SelectItem value="aprovado">Aprovado</SelectItem>
-                        <SelectItem value="efetuado">Efetuado</SelectItem>
-                        <SelectItem value="atendida">Atendida</SelectItem>
-                        <SelectItem value="recusado">Recusado</SelectItem>
-                        <SelectItem value="rejeitada">Rejeitada</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      type="text"
-                      placeholder="Ou digite um status customizado..."
-                      value={customStatus}
-                      onChange={(e) => setCustomStatus(e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
+                  <Label htmlFor="status-solicitacao">Status</Label>
+                  <Input
+                    list="status-predefinidos"
+                    id="status-solicitacao"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    placeholder="Selecione ou digite um status..."
+                    className="mt-2"
+                  />
+                  <datalist id="status-predefinidos">
+                    <option value="pendente" />
+                    <option value="aprovado" />
+                    <option value="efetuado" />
+                    <option value="atendida" />
+                    <option value="recusado" />
+                    <option value="rejeitada" />
+                  </datalist>
                 </div>
 
                 <Button 
