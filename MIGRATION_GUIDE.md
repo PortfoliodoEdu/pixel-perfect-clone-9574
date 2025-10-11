@@ -1,678 +1,317 @@
-# 🚀 Guia de Migração: Lovable Cloud → Supabase Auto-hospedado
+# Migração SQL Completa - Banco de Dados Prime Capital
 
-## 📋 Pré-requisitos
+Este arquivo contém a migração SQL consolidada para configurar todo o banco de dados do zero.
 
-- [ ] Conta no Supabase (https://supabase.com)
-- [ ] Node.js instalado (v18+)
-- [ ] Supabase CLI instalado
-- [ ] Acesso ao projeto atual no Lovable Cloud
-- [ ] Backup de todos os dados importantes
+## 📋 Como Usar
 
----
-
-## 🔧 Instalação do Supabase CLI
-
-```bash
-# Instalar globalmente
-npm install -g supabase
-
-# Verificar instalação
-supabase --version
-```
+1. Acesse o **SQL Editor** no seu projeto Supabase
+2. Copie todo o SQL abaixo
+3. Execute o script completo
+4. Verifique se todas as tabelas foram criadas
 
 ---
 
-## 📦 Passo 1: Criar Projeto Supabase
-
-1. Acesse https://supabase.com/dashboard
-2. Clique em "New Project"
-3. Configure:
-   - **Nome do projeto**: Prime Capital
-   - **Database Password**: [Anote esta senha!]
-   - **Região**: Escolha a mais próxima dos usuários
-4. Aguarde a criação (~2 minutos)
-
----
-
-## 🔗 Passo 2: Conectar ao Projeto
-
-```bash
-# Na pasta raiz do projeto
-cd seu-projeto-prime-capital
-
-# Inicializar configuração do Supabase (se necessário)
-supabase init
-
-# Conectar ao projeto criado
-supabase link --project-ref SEU_PROJECT_ID
-```
-
-**Onde encontrar o Project ID:**
-- Dashboard Supabase → Settings → General → Reference ID
-
----
-
-## 🗄️ Passo 3: Aplicar Migrações do Banco
-
-```bash
-# Verificar migrações disponíveis
-ls supabase/migrations/
-
-# Aplicar TODAS as migrações
-supabase db push
-
-# Verificar se foi aplicado corretamente
-supabase db diff
-```
-
-**⚠️ IMPORTANTE:** Suas migrações estão em:
-- `supabase/migrations/` (todas numeradas)
-- Elas contêm:
-  - Tabelas (profiles, solicitacoes, planos, etc.)
-  - RLS Policies (segurança)
-  - Functions (has_role, triggers)
-  - Constraints e índices
-
----
-
-## 📤 Passo 4: Migrar Dados Existentes
-
-### 4.1. Exportar dados do Lovable Cloud
-
-**Opção A: Via SQL (recomendado)**
-```bash
-# Conectar ao Lovable Cloud temporariamente
-SUPABASE_URL=https://tqsshqhmzcwchdwenfqi.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-
-# Exportar dados (use ferramenta de backup ou script)
-# Exemplo de tabelas para exportar:
-- profiles
-- user_roles
-- planos
-- planos_adquiridos
-- solicitacoes
-- historico_observacoes
-- user_documents
-```
-
-**Opção B: Via código**
-Crie um script Node.js para exportar e importar dados:
-
-```javascript
-// export-data.js
-import { createClient } from '@supabase/supabase-js';
-import fs from 'fs';
-
-const oldSupabase = createClient(OLD_URL, OLD_KEY);
-const newSupabase = createClient(NEW_URL, NEW_SERVICE_ROLE_KEY);
-
-async function exportData() {
-  const tables = ['profiles', 'user_roles', 'planos', 'planos_adquiridos', 
-                  'solicitacoes', 'historico_observacoes', 'user_documents'];
-  
-  for (const table of tables) {
-    const { data } = await oldSupabase.from(table).select('*');
-    fs.writeFileSync(`backup_${table}.json`, JSON.stringify(data, null, 2));
-    console.log(`✅ Exported ${table}: ${data.length} rows`);
-  }
-}
-
-exportData();
-```
-
-### 4.2. Importar dados no novo Supabase
-
-```javascript
-// import-data.js
-async function importData() {
-  const tables = ['profiles', 'user_roles', 'planos', 'planos_adquiridos', 
-                  'solicitacoes', 'historico_observacoes', 'user_documents'];
-  
-  for (const table of tables) {
-    const data = JSON.parse(fs.readFileSync(`backup_${table}.json`));
-    const { error } = await newSupabase.from(table).insert(data);
-    if (error) console.error(`❌ Error importing ${table}:`, error);
-    else console.log(`✅ Imported ${table}: ${data.length} rows`);
-  }
-}
-
-importData();
-```
-
----
-
-## 📁 Passo 5: Recriar Storage Buckets
+## 🗄️ SQL de Migração Completa
 
 ```sql
--- No SQL Editor do Supabase Dashboard, execute:
+-- ============================================
+-- EXTENSÕES E ENUMS
+-- ============================================
 
--- 1. Criar buckets
-INSERT INTO storage.buckets (id, name, public) 
-VALUES 
-  ('documentos', 'documentos', false),
-  ('fotos-perfil', 'fotos-perfil', true);
+CREATE TYPE public.app_role AS ENUM ('admin', 'cliente', 'superadmin');
+CREATE TYPE public.plan_status AS ENUM ('ativo', 'pausado', 'concluido', 'cancelado');
+CREATE TYPE public.withdrawal_type AS ENUM ('mensal', 'quinzenal');
 
--- 2. Aplicar políticas RLS do bucket 'documentos'
-CREATE POLICY "Users can upload their own documents"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (
-  bucket_id = 'documentos' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
+-- ============================================
+-- TABELAS
+-- ============================================
+
+CREATE TABLE public.profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  nome TEXT NOT NULL,
+  email TEXT NOT NULL,
+  cpf TEXT,
+  telefone TEXT,
+  data_nascimento DATE,
+  rua_bairro TEXT,
+  numero_residencial TEXT,
+  cep TEXT,
+  cidade TEXT,
+  estado TEXT,
+  foto_perfil TEXT,
+  informacoes_personalizadas TEXT,
+  pagamento_ativo BOOLEAN DEFAULT true,
+  status_plataforma TEXT DEFAULT 'Inativa',
+  documentos_completos BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
-CREATE POLICY "Users can view their own documents"
-ON storage.objects FOR SELECT
-TO authenticated
-USING (
-  bucket_id = 'documentos' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
+CREATE TABLE public.user_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role public.app_role NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  UNIQUE(user_id, role)
 );
 
-CREATE POLICY "Admins can view all documents"
-ON storage.objects FOR SELECT
-TO authenticated
-USING (
-  bucket_id = 'documentos'
-  AND EXISTS (
-    SELECT 1 FROM user_roles 
-    WHERE user_id = auth.uid() AND role = 'admin'
-  )
+CREATE TABLE public.planos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome_plano TEXT NOT NULL,
+  descricao TEXT,
+  preco NUMERIC NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
--- 3. Aplicar políticas RLS do bucket 'fotos-perfil'
-CREATE POLICY "Anyone can view profile photos"
-ON storage.objects FOR SELECT
-TO public
-USING (bucket_id = 'fotos-perfil');
-
-CREATE POLICY "Users can upload their own profile photo"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (
-  bucket_id = 'fotos-perfil'
-  AND auth.uid()::text = (storage.foldername(name))[1]
+CREATE TABLE public.planos_adquiridos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cliente_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  plano_id UUID NOT NULL REFERENCES public.planos(id) ON DELETE CASCADE,
+  id_carteira TEXT NOT NULL,
+  tipo_saque public.withdrawal_type NOT NULL,
+  status_plano public.plan_status DEFAULT 'ativo',
+  data_aquisicao TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
-CREATE POLICY "Users can update their own profile photo"
-ON storage.objects FOR UPDATE
-TO authenticated
-USING (
-  bucket_id = 'fotos-perfil'
-  AND auth.uid()::text = (storage.foldername(name))[1]
+CREATE TABLE public.solicitacoes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  plano_adquirido_id UUID REFERENCES public.planos_adquiridos(id) ON DELETE SET NULL,
+  tipo_solicitacao TEXT NOT NULL,
+  descricao TEXT,
+  status TEXT NOT NULL DEFAULT 'pendente',
+  resposta_admin TEXT,
+  atendida_por UUID REFERENCES auth.users(id),
+  atendida_em TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
+
+CREATE TABLE public.historico_observacoes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  plano_adquirido_id UUID NOT NULL REFERENCES public.planos_adquiridos(id) ON DELETE CASCADE,
+  solicitacao_id UUID REFERENCES public.solicitacoes(id) ON DELETE SET NULL,
+  tipo_evento TEXT,
+  valor_solicitado NUMERIC,
+  valor_final NUMERIC,
+  status_evento TEXT,
+  observacao TEXT NOT NULL,
+  comprovante_url TEXT,
+  origem TEXT DEFAULT 'usuario',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+CREATE TABLE public.user_documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  tipo_documento TEXT NOT NULL,
+  arquivo_url TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pendente',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+CREATE TABLE public.system_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  log_data JSONB NOT NULL,
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+-- ============================================
+-- ÍNDICES
+-- ============================================
+
+CREATE INDEX idx_user_roles_user_id ON public.user_roles(user_id);
+CREATE INDEX idx_user_roles_role ON public.user_roles(role);
+CREATE INDEX idx_planos_adquiridos_cliente_id ON public.planos_adquiridos(cliente_id);
+CREATE INDEX idx_solicitacoes_user_id ON public.solicitacoes(user_id);
+CREATE INDEX idx_solicitacoes_status ON public.solicitacoes(status);
+CREATE INDEX idx_historico_plano_adquirido_id ON public.historico_observacoes(plano_adquirido_id);
+CREATE INDEX idx_user_documents_user_id ON public.user_documents(user_id);
+CREATE INDEX idx_system_logs_expires_at ON public.system_logs(expires_at);
+
+-- ============================================
+-- FUNÇÕES
+-- ============================================
+
+CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role public.app_role)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = _user_id AND role = _role) $$;
+
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$;
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, nome, email)
+  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'nome', 'Usuário'), NEW.email);
+  INSERT INTO public.user_roles (user_id, role) VALUES (NEW.id, 'cliente');
+  RETURN NEW;
+END; $$;
+
+CREATE OR REPLACE FUNCTION public.sync_platform_status()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  IF NEW.pagamento_ativo = true THEN NEW.status_plataforma := 'Ativa';
+  ELSE NEW.status_plataforma := 'Inativa'; END IF;
+  RETURN NEW;
+END; $$;
+
+CREATE OR REPLACE FUNCTION public.create_timeline_entry_on_request()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.historico_observacoes (plano_adquirido_id, solicitacao_id, tipo_evento, valor_solicitado, status_evento, observacao)
+  VALUES (NEW.plano_adquirido_id, NEW.id, NEW.tipo_solicitacao, 
+    CASE WHEN NEW.descricao ~ '^[0-9]+\.?[0-9]*$' THEN NEW.descricao::numeric ELSE NULL END,
+    NEW.status, NEW.descricao);
+  RETURN NEW;
+END; $$;
+
+CREATE OR REPLACE FUNCTION public.update_timeline_entry_on_request()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.historico_observacoes (plano_adquirido_id, solicitacao_id, tipo_evento, status_evento, observacao, origem)
+  VALUES (NEW.plano_adquirido_id, NEW.id, NEW.tipo_solicitacao, NEW.status, COALESCE(NEW.resposta_admin, 'Status atualizado'), 'admin');
+  RETURN NEW;
+END; $$;
+
+CREATE OR REPLACE FUNCTION public.audit_profile_access()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  IF (TG_OP = 'UPDATE' AND OLD.* IS DISTINCT FROM NEW.*) THEN
+    RAISE LOG '[SECURITY_AUDIT] Profile updated: user_id=%, updated_by=%', NEW.id, auth.uid();
+  END IF;
+  RETURN NEW;
+END; $$;
+
+CREATE OR REPLACE FUNCTION public.log_role_changes()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  RAISE WARNING '[SECURITY_AUDIT] Role change: user_id=%, old_role=%, new_role=%, changed_by=%', 
+    COALESCE(NEW.user_id, OLD.user_id), OLD.role, NEW.role, auth.uid();
+  RETURN NEW;
+END; $$;
+
+CREATE OR REPLACE FUNCTION public.delete_expired_logs()
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$ BEGIN DELETE FROM public.system_logs WHERE expires_at < now(); END; $$;
+
+-- ============================================
+-- TRIGGERS
+-- ============================================
+
+CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE TRIGGER update_planos_updated_at BEFORE UPDATE ON public.planos
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE TRIGGER update_planos_adquiridos_updated_at BEFORE UPDATE ON public.planos_adquiridos
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE TRIGGER update_solicitacoes_updated_at BEFORE UPDATE ON public.solicitacoes
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE TRIGGER update_user_documents_updated_at BEFORE UPDATE ON public.user_documents
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+CREATE TRIGGER sync_platform_status_trigger BEFORE INSERT OR UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.sync_platform_status();
+CREATE TRIGGER create_timeline_on_request AFTER INSERT ON public.solicitacoes
+  FOR EACH ROW EXECUTE FUNCTION public.create_timeline_entry_on_request();
+CREATE TRIGGER update_timeline_on_request AFTER UPDATE ON public.solicitacoes
+  FOR EACH ROW WHEN (OLD.status IS DISTINCT FROM NEW.status OR OLD.resposta_admin IS DISTINCT FROM NEW.resposta_admin)
+  EXECUTE FUNCTION public.update_timeline_entry_on_request();
+CREATE TRIGGER audit_profile_updates AFTER UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.audit_profile_access();
+CREATE TRIGGER log_role_changes_trigger AFTER INSERT OR UPDATE OR DELETE ON public.user_roles
+  FOR EACH ROW EXECUTE FUNCTION public.log_role_changes();
+
+-- ============================================
+-- ROW LEVEL SECURITY (RLS)
+-- ============================================
+
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.planos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.planos_adquiridos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.solicitacoes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.historico_observacoes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.system_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "profiles_select_policy" ON public.profiles FOR SELECT USING (auth.uid() = id OR public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "profiles_insert_policy" ON public.profiles FOR INSERT WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "profiles_update_policy" ON public.profiles FOR UPDATE USING (auth.uid() = id OR public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "profiles_delete_policy" ON public.profiles FOR DELETE USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Users can view their own roles" ON public.user_roles FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Admins can view all roles" ON public.user_roles FOR SELECT USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Only admins can insert roles" ON public.user_roles FOR INSERT WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Only admins can update OTHER users roles" ON public.user_roles FOR UPDATE USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Only admins can delete roles" ON public.user_roles FOR DELETE USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Authenticated users can view planos" ON public.planos FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Admins can manage planos" ON public.planos FOR ALL USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Users can view their own planos" ON public.planos_adquiridos FOR SELECT USING (auth.uid() = cliente_id);
+CREATE POLICY "Admins can view all planos_adquiridos" ON public.planos_adquiridos FOR SELECT USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can insert planos_adquiridos" ON public.planos_adquiridos FOR INSERT WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can update planos_adquiridos" ON public.planos_adquiridos FOR UPDATE USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can delete planos_adquiridos" ON public.planos_adquiridos FOR DELETE USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Users can view their own requests" ON public.solicitacoes FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create their own requests" ON public.solicitacoes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Admins can view all requests" ON public.solicitacoes FOR SELECT USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can update all requests" ON public.solicitacoes FOR UPDATE USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Users can view their plan history" ON public.historico_observacoes FOR SELECT 
+  USING (EXISTS (SELECT 1 FROM public.planos_adquiridos WHERE planos_adquiridos.id = historico_observacoes.plano_adquirido_id AND planos_adquiridos.cliente_id = auth.uid()));
+CREATE POLICY "Users can create history for their plans" ON public.historico_observacoes FOR INSERT 
+  WITH CHECK (EXISTS (SELECT 1 FROM public.planos_adquiridos WHERE planos_adquiridos.id = historico_observacoes.plano_adquirido_id AND planos_adquiridos.cliente_id = auth.uid()));
+CREATE POLICY "Admins can view all history" ON public.historico_observacoes FOR SELECT USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can manage all history" ON public.historico_observacoes FOR ALL USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Users can view their own documents" ON public.user_documents FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can upload their own documents" ON public.user_documents FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own documents" ON public.user_documents FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete their own documents" ON public.user_documents FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Admins can view all documents" ON public.user_documents FOR SELECT USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can update all documents" ON public.user_documents FOR UPDATE USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins can view all logs" ON public.system_logs FOR SELECT 
+  USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_roles.user_id = auth.uid() AND user_roles.role = 'admin'));
+
+-- ============================================
+-- STORAGE
+-- ============================================
+
+INSERT INTO storage.buckets (id, name, public) VALUES ('documentos', 'documentos', false), ('fotos-perfil', 'fotos-perfil', true) ON CONFLICT DO NOTHING;
+
+CREATE POLICY "Users can upload their own documents" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'documentos' AND auth.uid()::text = (storage.foldername(name))[1]);
+CREATE POLICY "Users can view their own documents" ON storage.objects FOR SELECT USING (bucket_id = 'documentos' AND auth.uid()::text = (storage.foldername(name))[1]);
+CREATE POLICY "Users can update their own documents" ON storage.objects FOR UPDATE USING (bucket_id = 'documentos' AND auth.uid()::text = (storage.foldername(name))[1]);
+CREATE POLICY "Users can delete their own documents" ON storage.objects FOR DELETE USING (bucket_id = 'documentos' AND auth.uid()::text = (storage.foldername(name))[1]);
+CREATE POLICY "Admins can view all documents" ON storage.objects FOR SELECT USING (bucket_id = 'documentos' AND public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Anyone can view profile photos" ON storage.objects FOR SELECT USING (bucket_id = 'fotos-perfil');
+CREATE POLICY "Users can upload their own profile photo" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'fotos-perfil' AND auth.uid()::text = (storage.foldername(name))[1]);
+CREATE POLICY "Users can update their own profile photo" ON storage.objects FOR UPDATE USING (bucket_id = 'fotos-perfil' AND auth.uid()::text = (storage.foldername(name))[1]);
+CREATE POLICY "Users can delete their own profile photo" ON storage.objects FOR DELETE USING (bucket_id = 'fotos-perfil' AND auth.uid()::text = (storage.foldername(name))[1]);
 ```
 
-### 5.1. Migrar arquivos do storage
-
-```javascript
-// migrate-storage.js
-async function migrateStorage() {
-  const buckets = ['documentos', 'fotos-perfil'];
-  
-  for (const bucket of buckets) {
-    // Listar arquivos antigos
-    const { data: files } = await oldSupabase.storage.from(bucket).list();
-    
-    for (const file of files) {
-      // Baixar arquivo
-      const { data: blob } = await oldSupabase.storage
-        .from(bucket)
-        .download(file.name);
-      
-      // Upload no novo bucket
-      await newSupabase.storage
-        .from(bucket)
-        .upload(file.name, blob);
-      
-      console.log(`✅ Migrated ${bucket}/${file.name}`);
-    }
-  }
-}
-```
-
----
-
-## ⚡ Passo 6: Deploy das Edge Functions
-
-```bash
-# Fazer deploy de cada função
-supabase functions deploy log-activity --no-verify-jwt
-supabase functions deploy audit-log --no-verify-jwt
-supabase functions deploy setup-admin --no-verify-jwt
-
-# Verificar se foram deployadas
-supabase functions list
-```
-
----
-
-## 🔐 Passo 7: Configurar Secrets
-
-```bash
-# Adicionar secrets necessários para as Edge Functions
-supabase secrets set SUPABASE_URL=https://SEU_PROJETO.supabase.co
-supabase secrets set SUPABASE_ANON_KEY=sua_anon_key
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key
-supabase secrets set SUPABASE_DB_URL=sua_db_url
-
-# Verificar secrets configurados
-supabase secrets list
-```
-
-**Onde encontrar as keys:**
-- Dashboard → Settings → API → Project URL
-- Dashboard → Settings → API → anon/public key
-- Dashboard → Settings → API → service_role key (⚠️ mantenha em segredo!)
-
----
-
-## 🌐 Passo 8: Atualizar Código da Aplicação
-
-### 8.1. Atualizar variáveis de ambiente
-
-Crie um arquivo `.env.local` (ou configure no seu serviço de hospedagem):
-
-```env
-VITE_SUPABASE_URL=https://SEU_PROJETO.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sua_anon_key_aqui
-VITE_SUPABASE_PROJECT_ID=seu_project_id
-```
-
-### 8.2. Verificar configuração do cliente
-
-O arquivo `src/integrations/supabase/client.ts` já está configurado para ler essas variáveis:
-
-```typescript
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-```
-
-**✅ Não precisa alterar código!** Apenas as variáveis de ambiente.
-
----
-
-## 🔒 Passo 9: Configurar Autenticação
-
-### 9.1. Configurar URLs de redirecionamento
-
-Dashboard → Authentication → URL Configuration:
-
-```
-Site URL: https://seu-dominio.com
-Redirect URLs: 
-  - https://seu-dominio.com
-  - http://localhost:5173 (para desenvolvimento)
-```
-
-### 9.2. Habilitar proteção de senha vazada (recomendado)
-
-Dashboard → Authentication → Policies → Enable "Leaked Password Protection"
-
-### 9.3. Configurar Email Templates (opcional)
-
-Dashboard → Authentication → Email Templates
-
-Personalize:
-- Confirm Signup
-- Reset Password
-- Magic Link
-
----
-
-## 🧪 Passo 10: Testar a Migração
-
-### 10.1. Teste local
-
-```bash
-# Iniciar Supabase localmente
-supabase start
-
-# Aplicar migrações localmente
-supabase db reset
-
-# Rodar aplicação
-npm run dev
-```
-
-### 10.2. Checklist de testes
-
-- [ ] Login funciona
-- [ ] Signup funciona
-- [ ] Dashboard carrega corretamente
-- [ ] Traders conseguem ver seus planos
-- [ ] Traders conseguem fazer solicitações (saque, quinzenal, segunda chance)
-- [ ] Admin consegue ver todas as solicitações
-- [ ] Admin consegue atualizar timeline
-- [ ] Admin consegue gerenciar traders
-- [ ] Upload de documentos funciona
-- [ ] Upload de foto de perfil funciona
-- [ ] Linha do tempo aparece corretamente
-- [ ] Notificações funcionam
-
-### 10.3. Verificar segurança
-
-```bash
-# Rodar linter de segurança do Supabase
-supabase db lint
-
-# Verificar RLS policies
-supabase db diff
-```
-
----
-
-## 🚀 Passo 11: Deploy em Produção
-
-### 11.1. Build da aplicação
-
-```bash
-# Criar build de produção
-npm run build
-
-# Testar build localmente
-npm run preview
-```
-
-### 11.2. Deploy (escolha uma plataforma)
-
-**Vercel:**
-```bash
-vercel --prod
-```
-
-**Netlify:**
-```bash
-netlify deploy --prod
-```
-
-**Outras opções:**
-- Cloudflare Pages
-- AWS Amplify
-- Railway
-- Render
-
-### 11.3. Configurar variáveis de ambiente no host
-
-No painel do seu serviço de hospedagem, adicione:
-```
-VITE_SUPABASE_URL=https://SEU_PROJETO.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sua_anon_key
-VITE_SUPABASE_PROJECT_ID=seu_project_id
-```
-
----
-
-## 📊 Passo 12: Monitoramento Pós-Migração
-
-### 12.1. Verificar logs
-
-```bash
-# Ver logs do banco de dados
-supabase db logs
-
-# Ver logs das Edge Functions
-supabase functions logs log-activity
-supabase functions logs audit-log
-```
-
-### 12.2. Monitorar métricas
-
-Dashboard → Reports:
-- Database usage
-- Auth users
-- API requests
-- Storage usage
-
----
-
-## 🔄 Rollback (se necessário)
-
-Se algo der errado, você pode voltar temporariamente ao Lovable Cloud:
-
-```env
-# .env.local
-VITE_SUPABASE_URL=https://tqsshqhmzcwchdwenfqi.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
----
-
-## ⚠️ Troubleshooting Comum
-
-### Problema: RLS policies bloqueando acesso
-
-**Solução:**
-```sql
--- Verificar policies ativas
-SELECT * FROM pg_policies WHERE tablename = 'nome_da_tabela';
-
--- Desabilitar temporariamente para debug (NÃO EM PRODUÇÃO!)
-ALTER TABLE nome_da_tabela DISABLE ROW LEVEL SECURITY;
-```
-
-### Problema: Edge Functions não funcionam
-
-**Solução:**
-```bash
-# Verificar logs
-supabase functions logs nome-funcao
-
-# Testar localmente
-supabase functions serve
-
-# Redeploy
-supabase functions deploy nome-funcao --no-verify-jwt
-```
-
-### Problema: Auth redirecionando errado
-
-**Solução:**
-- Verificar Site URL e Redirect URLs no Dashboard
-- Verificar `emailRedirectTo` no código de signup
-- Limpar cookies e localStorage do navegador
-
-### Problema: Storage retorna 404
-
-**Solução:**
-```sql
--- Verificar se buckets existem
-SELECT * FROM storage.buckets;
-
--- Verificar policies do storage
-SELECT * FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage';
-```
-
----
-
-## 📝 Checklist Final
-
-Antes de considerar a migração completa:
-
-- [ ] Todas as tabelas migradas com dados
-- [ ] RLS policies funcionando
-- [ ] Edge Functions deployadas
-- [ ] Storage buckets criados com policies
-- [ ] Arquivos migrados
-- [ ] Auth configurado (URLs, templates)
-- [ ] Variáveis de ambiente atualizadas
-- [ ] Testes completos realizados
-- [ ] Aplicação deployada em produção
-- [ ] Monitoramento configurado
-- [ ] Backup do Lovable Cloud mantido (por 30 dias)
-
----
-
-## 🆘 Suporte
-
-**Documentação Supabase:**
-- https://supabase.com/docs
-
-**Comunidade:**
-- Discord: https://discord.supabase.com
-- GitHub: https://github.com/supabase/supabase
-
-**Problemas com a migração?**
-- Verifique os logs: `supabase db logs`
-- Teste localmente: `supabase start`
-- Revise as RLS policies
-
----
-
-## 💡 Dicas Finais
-
-1. **Faça a migração em etapas** - Não tente fazer tudo de uma vez
-2. **Teste localmente primeiro** - Use `supabase start`
-3. **Mantenha backup** - Não delete dados do Lovable Cloud imediatamente
-4. **Documente mudanças** - Anote o que funcionou/não funcionou
-5. **Use staging** - Teste em ambiente de staging antes de produção
-
----
-
-## 🔐 Passo EXTRA: Configurar Backup e Restauração (CRÍTICO!)
-
-**⚠️ MUITO IMPORTANTE:** Mesmo com backup da Hostinger, você PRECISA de backup próprio do PostgreSQL!
-
-### Por que?
-
-- ✅ Snapshot da Hostinger = servidor inteiro (pode restaurar banco corrompido)
-- ✅ Backup PostgreSQL = dados transacionais e consistentes
-- ✅ Redundância: Local + Nuvem + Hostinger = 3 camadas de proteção
-
-### Scripts Prontos
-
-Todos os scripts de backup estão em `scripts/`:
-
-```bash
-scripts/
-├── backup-database.sh      # Backup diário do PostgreSQL
-├── backup-storage.sh        # Backup dos arquivos (fotos, docs)
-├── backup-to-cloud.sh       # Upload para Google Drive/Dropbox/S3
-├── restore-database.sh      # Restaurar banco de dados
-├── test-restore.sh          # Testar se backup funciona
-└── README.md                # Documentação completa
-```
-
-### Configuração Rápida (5 minutos)
-
-**1. Preparar ambiente**
-```bash
-# No servidor Hostinger via SSH
-sudo mkdir -p /home/backups/supabase
-sudo chown $USER:$USER /home/backups/supabase
-
-# Copiar scripts
-sudo cp scripts/*.sh /usr/local/bin/
-sudo chmod +x /usr/local/bin/*.sh
-```
-
-**2. Configurar senha PostgreSQL**
-```bash
-echo "localhost:5432:*:postgres:SUA_SENHA" > ~/.pgpass
-chmod 600 ~/.pgpass
-```
-
-**3. Automatizar com Cron**
-```bash
-crontab -e
-```
-
-Adicionar:
-```bash
-# Backup diário às 2h
-0 2 * * * /usr/local/bin/backup-database.sh >> /home/backups/supabase/cron.log 2>&1
-
-# Backup storage às 3h
-0 3 * * * /usr/local/bin/backup-storage.sh >> /home/backups/supabase/cron.log 2>&1
-
-# Upload nuvem às 4h
-0 4 * * * /usr/local/bin/backup-to-cloud.sh >> /home/backups/supabase/cron.log 2>&1
-
-# Teste mensal (dia 1 às 5h)
-0 5 1 * * /usr/local/bin/test-restore.sh >> /home/backups/supabase/cron.log 2>&1
-```
-
-**4. Configurar upload para nuvem (opcional mas recomendado)**
-```bash
-# Instalar Rclone
-curl https://rclone.org/install.sh | sudo bash
-
-# Configurar Google Drive, Dropbox, S3, etc
-rclone config
-```
-
-### Teste Manual
-
-```bash
-# Testar backup
-/usr/local/bin/backup-database.sh
-
-# Testar restauração (sem afetar produção)
-/usr/local/bin/test-restore.sh
-
-# Ver logs
-tail -f /home/backups/supabase/backup.log
-```
-
-### Monitoramento
-
-**Verificar se backups estão funcionando:**
-```bash
-# Listar backups
-ls -lh /home/backups/supabase/
-
-# Ver últimos logs
-tail -20 /home/backups/supabase/backup.log
-
-# Verificar espaço
-df -h /home/backups
-```
-
-### O que cada backup faz?
-
-| Tipo | O que salva | Retenção | Tamanho estimado |
-|------|-------------|----------|------------------|
-| PostgreSQL | Tabelas, RLS, functions | 7 dias | ~10-50MB |
-| Storage | Fotos, documentos | 7 dias | Varia |
-| Nuvem | Cópia de tudo | Ilimitado | Mesmo |
-| Hostinger | Servidor inteiro | Conforme plano | GB |
-
-### Restaurar em Caso de Desastre
-
-```bash
-# 1. Listar backups disponíveis
-ls -lh /home/backups/supabase/supabase_db_*.backup.gz
-
-# 2. Restaurar (CUIDADO: substitui dados!)
-sudo /usr/local/bin/restore-database.sh /home/backups/supabase/supabase_db_20250107.backup.gz
-
-# 3. Verificar se funcionou
-psql -U postgres -c "SELECT COUNT(*) FROM profiles;"
-```
-
-### Checklist de Segurança de Backup
-
-- [ ] Backup automático diário configurado
-- [ ] Upload para nuvem funcionando
-- [ ] Teste de restauração mensal agendado
-- [ ] Logs sendo monitorados
-- [ ] Espaço em disco monitorado (não encher!)
-- [ ] Múltiplas cópias (local + nuvem + hostinger)
-- [ ] Documentação de como restaurar
-- [ ] Senha do PostgreSQL segura no `.pgpass`
-
-### 📚 Documentação Completa
-
-Veja `scripts/README.md` para:
-- ✅ Instruções detalhadas de cada script
-- ✅ Troubleshooting comum
-- ✅ Configuração de alertas
-- ✅ Boas práticas
-- ✅ Opções de nuvem (Google Drive, S3, Dropbox, etc)
-
----
-
-**Última atualização:** 2025-10-07  
-**Versão:** 1.1 (+ Seção de Backup)  
-**Projeto:** Prime Capital - Sistema de Trading
+## ✅ Próximos Passos
+
+1. Verificar tabelas criadas no Table Editor
+2. Confirmar buckets de storage (documentos, fotos-perfil)
+3. Criar primeiro admin: `INSERT INTO user_roles (user_id, role) VALUES ('seu-uuid', 'admin');`
+4. Configurar .env com suas credenciais do Supabase
