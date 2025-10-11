@@ -283,9 +283,10 @@ const PlanosAdquiridosTab = () => {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0 bg-background z-50">
-                    <Command>
+                    <Command className="max-h-[300px]">
                       <CommandInput placeholder="Buscar por nome ou email..." />
-                      <CommandList>
+                      <CommandList className="max-h-[250px] overflow-y-auto">
+
                         <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
                         <CommandGroup>
                           {clientes.map((c) => (
