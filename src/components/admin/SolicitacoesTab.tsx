@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Upload, Search } from "lucide-react";
+import { Upload, Search, RefreshCw } from "lucide-react";
 
 interface Solicitacao {
   id: string;
@@ -216,7 +216,18 @@ export const SolicitacoesTab = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-foreground mb-4">Lista de Solicitações</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-foreground">Lista de Solicitações</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadSolicitacoes}
+            disabled={loading}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
+        </div>
         
         <Tabs value={filter} onValueChange={setFilter} className="w-full">
           <TabsList className="grid w-full grid-cols-5">
