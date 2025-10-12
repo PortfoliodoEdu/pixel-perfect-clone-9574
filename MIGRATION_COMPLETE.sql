@@ -608,13 +608,13 @@ CREATE POLICY "Admins can view all logs" ON public.system_logs
   ));
 
 -- STORAGE BUCKETS
-INSERT INTO storage.buckets (id, name, public)
+INSERT INTO storage.buckets (id, name, public_access)
 VALUES
   ('documentos', 'documentos', false),
   ('fotos-perfil', 'fotos-perfil', true)
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
-  public = EXCLUDED.public;
+  public_access = EXCLUDED.public_access;
 
 -- STORAGE POLICIES - DOCUMENTOS
 CREATE POLICY "Users can upload their own documents" ON storage.objects
