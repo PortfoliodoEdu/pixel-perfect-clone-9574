@@ -1,3 +1,111 @@
+-- =====================================================
+-- FASE 1: DESTRUIÇÃO COMPLETA DO BANCO
+-- =====================================================
+
+-- REMOVER TODAS AS POLICIES DE STORAGE
+DROP POLICY IF EXISTS "Users can upload their own documents" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view their own documents" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own documents" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own documents" ON storage.objects;
+DROP POLICY IF EXISTS "Admins can view all documents" ON storage.objects;
+DROP POLICY IF EXISTS "Anyone can view profile photos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can upload their own profile photo" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own profile photo" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own profile photo" ON storage.objects;
+
+-- REMOVER TODAS AS POLICIES DAS TABELAS
+DROP POLICY IF EXISTS "profiles_select_policy" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_insert_policy" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update_policy" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_delete_policy" ON public.profiles;
+DROP POLICY IF EXISTS "Users can view their own roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Admins can view all roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Only admins can insert roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Only admins can update OTHER users roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Only admins can delete roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Authenticated users can view planos" ON public.planos;
+DROP POLICY IF EXISTS "Admins can manage planos" ON public.planos;
+DROP POLICY IF EXISTS "Users can view their own planos" ON public.planos_adquiridos;
+DROP POLICY IF EXISTS "Admins can view all planos_adquiridos" ON public.planos_adquiridos;
+DROP POLICY IF EXISTS "Admins can insert planos_adquiridos" ON public.planos_adquiridos;
+DROP POLICY IF EXISTS "Admins can update planos_adquiridos" ON public.planos_adquiridos;
+DROP POLICY IF EXISTS "Admins can delete planos_adquiridos" ON public.planos_adquiridos;
+DROP POLICY IF EXISTS "Users can view their own requests" ON public.solicitacoes;
+DROP POLICY IF EXISTS "Users can create their own requests" ON public.solicitacoes;
+DROP POLICY IF EXISTS "Admins can view all requests" ON public.solicitacoes;
+DROP POLICY IF EXISTS "Admins can update all requests" ON public.solicitacoes;
+DROP POLICY IF EXISTS "Users can view their plan history" ON public.historico_observacoes;
+DROP POLICY IF EXISTS "Users can create history for their plans" ON public.historico_observacoes;
+DROP POLICY IF EXISTS "Admins can view all history" ON public.historico_observacoes;
+DROP POLICY IF EXISTS "Admins can manage all history" ON public.historico_observacoes;
+DROP POLICY IF EXISTS "Users can view their own documents" ON public.user_documents;
+DROP POLICY IF EXISTS "Users can upload their own documents" ON public.user_documents;
+DROP POLICY IF EXISTS "Users can update their own documents" ON public.user_documents;
+DROP POLICY IF EXISTS "Users can delete their own documents" ON public.user_documents;
+DROP POLICY IF EXISTS "Admins can view all documents" ON public.user_documents;
+DROP POLICY IF EXISTS "Admins can update all documents" ON public.user_documents;
+DROP POLICY IF EXISTS "Admins can view all logs" ON public.system_logs;
+
+-- REMOVER TODOS OS TRIGGERS
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
+DROP TRIGGER IF EXISTS update_planos_updated_at ON public.planos;
+DROP TRIGGER IF EXISTS update_planos_adquiridos_updated_at ON public.planos_adquiridos;
+DROP TRIGGER IF EXISTS update_solicitacoes_updated_at ON public.solicitacoes;
+DROP TRIGGER IF EXISTS update_user_documents_updated_at ON public.user_documents;
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP TRIGGER IF EXISTS sync_platform_status_trigger ON public.profiles;
+DROP TRIGGER IF EXISTS create_timeline_on_request ON public.solicitacoes;
+DROP TRIGGER IF EXISTS update_timeline_on_request ON public.solicitacoes;
+DROP TRIGGER IF EXISTS audit_profile_updates ON public.profiles;
+DROP TRIGGER IF EXISTS log_role_changes_trigger ON public.user_roles;
+
+-- REMOVER TODAS AS FUNÇÕES
+DROP FUNCTION IF EXISTS public.has_role(uuid, app_role);
+DROP FUNCTION IF EXISTS public.update_updated_at_column();
+DROP FUNCTION IF EXISTS public.handle_new_user();
+DROP FUNCTION IF EXISTS public.sync_platform_status();
+DROP FUNCTION IF EXISTS public.create_timeline_entry_on_request();
+DROP FUNCTION IF EXISTS public.update_timeline_entry_on_request();
+DROP FUNCTION IF EXISTS public.audit_profile_access();
+DROP FUNCTION IF EXISTS public.log_role_changes();
+DROP FUNCTION IF EXISTS public.delete_expired_logs();
+
+-- REMOVER TODAS AS TABELAS
+DROP TABLE IF EXISTS public.system_logs CASCADE;
+DROP TABLE IF EXISTS public.user_documents CASCADE;
+DROP TABLE IF EXISTS public.historico_observacoes CASCADE;
+DROP TABLE IF EXISTS public.solicitacoes CASCADE;
+DROP TABLE IF EXISTS public.planos_adquiridos CASCADE;
+DROP TABLE IF EXISTS public.planos CASCADE;
+DROP TABLE IF EXISTS public.user_roles CASCADE;
+DROP TABLE IF EXISTS public.profiles CASCADE;
+
+-- REMOVER TODOS OS TIPOS
+DROP TYPE IF EXISTS public.withdrawal_type CASCADE;
+DROP TYPE IF EXISTS public.plan_status CASCADE;
+DROP TYPE IF EXISTS public.app_role CASCADE;
+
+-- =====================================================
+-- FASE 2: SEGUNDA TENTATIVA DE LIMPEZA (COM CASCADE)
+-- =====================================================
+
+-- Segunda tentativa para garantir que tudo foi removido
+DROP TABLE IF EXISTS public.system_logs CASCADE;
+DROP TABLE IF EXISTS public.user_documents CASCADE;
+DROP TABLE IF EXISTS public.historico_observacoes CASCADE;
+DROP TABLE IF EXISTS public.solicitacoes CASCADE;
+DROP TABLE IF EXISTS public.planos_adquiridos CASCADE;
+DROP TABLE IF EXISTS public.planos CASCADE;
+DROP TABLE IF EXISTS public.user_roles CASCADE;
+DROP TABLE IF EXISTS public.profiles CASCADE;
+
+DROP TYPE IF EXISTS public.withdrawal_type CASCADE;
+DROP TYPE IF EXISTS public.plan_status CASCADE;
+DROP TYPE IF EXISTS public.app_role CASCADE;
+
+-- =====================================================
+-- FASE 3: RECRIAÇÃO COMPLETA DO BANCO
+-- =====================================================
 
 -- TIPOS ENUMERADOS
 CREATE TYPE public.app_role AS ENUM ('admin', 'cliente', 'superadmin');
@@ -504,7 +612,9 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES
   ('documentos', 'documentos', false),
   ('fotos-perfil', 'fotos-perfil', true)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  public = EXCLUDED.public;
 
 -- STORAGE POLICIES - DOCUMENTOS
 CREATE POLICY "Users can upload their own documents" ON storage.objects
@@ -567,4 +677,3 @@ CREATE POLICY "Users can delete their own profile photo" ON storage.objects
     bucket_id = 'fotos-perfil'
     AND auth.uid()::text = (storage.foldername(name))[1]
   );
-
