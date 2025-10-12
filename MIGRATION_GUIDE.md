@@ -170,7 +170,7 @@ RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
 BEGIN
   INSERT INTO public.historico_observacoes (plano_adquirido_id, solicitacao_id, tipo_evento, valor_solicitado, status_evento, observacao)
-  VALUES (NEW.plano_adquirido_id, NEW.id, NEW.tipo_solicitacao, 
+  VALUES (NEW.plano_adquirido_id, NEW.id, NEW.tipo_solicitacao,
     CASE WHEN NEW.descricao ~ '^[0-9]+\.?[0-9]*$' THEN NEW.descricao::numeric ELSE NULL END,
     NEW.status, NEW.descricao);
   RETURN NEW;
@@ -199,7 +199,7 @@ CREATE OR REPLACE FUNCTION public.log_role_changes()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
 BEGIN
-  RAISE WARNING '[SECURITY_AUDIT] Role change: user_id=%, old_role=%, new_role=%, changed_by=%', 
+  RAISE WARNING '[SECURITY_AUDIT] Role change: user_id=%, old_role=%, new_role=%, changed_by=%',
     COALESCE(NEW.user_id, OLD.user_id), OLD.role, NEW.role, auth.uid();
   RETURN NEW;
 END; $$;
@@ -274,9 +274,9 @@ CREATE POLICY "Users can create their own requests" ON public.solicitacoes FOR I
 CREATE POLICY "Admins can view all requests" ON public.solicitacoes FOR SELECT USING (public.has_role(auth.uid(), 'admin'));
 CREATE POLICY "Admins can update all requests" ON public.solicitacoes FOR UPDATE USING (public.has_role(auth.uid(), 'admin'));
 
-CREATE POLICY "Users can view their plan history" ON public.historico_observacoes FOR SELECT 
+CREATE POLICY "Users can view their plan history" ON public.historico_observacoes FOR SELECT
   USING (EXISTS (SELECT 1 FROM public.planos_adquiridos WHERE planos_adquiridos.id = historico_observacoes.plano_adquirido_id AND planos_adquiridos.cliente_id = auth.uid()));
-CREATE POLICY "Users can create history for their plans" ON public.historico_observacoes FOR INSERT 
+CREATE POLICY "Users can create history for their plans" ON public.historico_observacoes FOR INSERT
   WITH CHECK (EXISTS (SELECT 1 FROM public.planos_adquiridos WHERE planos_adquiridos.id = historico_observacoes.plano_adquirido_id AND planos_adquiridos.cliente_id = auth.uid()));
 CREATE POLICY "Admins can view all history" ON public.historico_observacoes FOR SELECT USING (public.has_role(auth.uid(), 'admin'));
 CREATE POLICY "Admins can manage all history" ON public.historico_observacoes FOR ALL USING (public.has_role(auth.uid(), 'admin'));
@@ -288,7 +288,7 @@ CREATE POLICY "Users can delete their own documents" ON public.user_documents FO
 CREATE POLICY "Admins can view all documents" ON public.user_documents FOR SELECT USING (public.has_role(auth.uid(), 'admin'));
 CREATE POLICY "Admins can update all documents" ON public.user_documents FOR UPDATE USING (public.has_role(auth.uid(), 'admin'));
 
-CREATE POLICY "Admins can view all logs" ON public.system_logs FOR SELECT 
+CREATE POLICY "Admins can view all logs" ON public.system_logs FOR SELECT
   USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_roles.user_id = auth.uid() AND user_roles.role = 'admin'));
 
 -- ============================================

@@ -1,7 +1,3 @@
--- ============================================================================
--- MIGRAÇÃO COMPLETA - PRIME CAPITAL
--- Execute este script completo no Supabase SQL Editor após limpar o banco
--- ============================================================================
 
 -- TIPOS ENUMERADOS
 CREATE TYPE public.app_role AS ENUM ('admin', 'cliente', 'superadmin');
@@ -572,6 +568,3 @@ CREATE POLICY "Users can delete their own profile photo" ON storage.objects
     AND auth.uid()::text = (storage.foldername(name))[1]
   );
 
--- ============================================================================
--- FIM DA MIGRAÇÃO
--- ============================================================================
